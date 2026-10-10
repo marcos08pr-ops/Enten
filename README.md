@@ -24,7 +24,7 @@ Hecha a partir de la experiencia de [Enten](https://github.com/marcos08pr-ops/mi
 
 Parla se publica como **artefacto privado de Claude**: solo lo abre quien tú invites.
 
-1. Abre el enlace del artefacto en el iPhone (Safari) y entra con tu cuenta de Claude.
+1. Abre <https://claude.ai/artifact/VQBQUga27MKw8UtAbrwhGr> en el iPhone (Safari) y entra con tu cuenta de Claude.
 2. Para invitar a alguien: botón **Compartir** del artefacto → añade su correo con permiso **Colaborador**. Así guarda su propio progreso.
 3. Cada persona tiene su racha, su curso y su tutor. El tutor usa la cuenta de Claude de quien lo usa, sin claves.
 4. Para tenerla como app: Safari → **Compartir → Añadir a pantalla de inicio**.

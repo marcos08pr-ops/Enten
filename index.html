@@ -1871,7 +1871,7 @@ function countWords() {
    2) Calendario del iPhone: evento diario con alarma (archivo .ics) — funciona sin servidor.
    3) App instalada en la pantalla de inicio (fuera de Claude): número en el icono y notificaciones.
    4) Avisos push reales (opcional): ver README → «Avisos push». */
-const APP_LINK = ''; // enlace del artefacto publicado; se rellena al publicar
+const APP_LINK = 'https://claude.ai/artifact/VQBQUga27MKw8UtAbrwhGr'; // enlace del artefacto privado de Claude
 const Notify = {
   reg: null, cfg: null, timer: 0,
   hosted() { return !Store.inClaude && /^https?:$/.test(location.protocol); },
