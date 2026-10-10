@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="28%" r="85%"><stop offset="0" stop-color="#2b1a63"/><stop offset=".55" stop-color="#120c22"/><stop offset="1" stop-color="#09070f"/></radialGradient>
+    <linearGradient id="bub" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b9a2ff"/><stop offset="1" stop-color="#6a43ee"/></linearGradient>
+    <linearGradient id="fl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd166"/><stop offset="1" stop-color="#ff8a2a"/></linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <path fill="url(#bub)" d="M342 222h340c116 0 180 64 180 180v190c0 116-64 180-180 180H470L298 900l34-128h10c-116 0-180-64-180-180V402c0-116 64-180 180-180z"/>
+  <g transform="translate(305 262) scale(17.2)">
+    <path fill="url(#fl)" d="M12 2c1 3.2 4.6 5.3 5.6 8.6 1.4 4.6-1.6 10.4-5.6 10.4S4.6 18 5.4 13.6c.4-2.3 1.9-3.6 2.6-5.6.6 1.4 1.2 2.3 2.3 2.9C10 7.6 10.8 4.6 12 2z"/>
+    <path fill="#fff5e0" opacity=".8" d="M12 12.5c.9 1.6 2.6 2.4 2.6 4.4 0 1.7-1.2 2.9-2.6 2.9s-2.6-1.1-2.6-2.7c0-1.4.9-2.1 1.5-3.1.3.6.7 1 1.1 1.2z"/>
+  </g>
+</svg>

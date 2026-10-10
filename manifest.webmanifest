@@ -1,0 +1,15 @@
+{
+  "name": "Parla",
+  "short_name": "Parla",
+  "description": "Aprende catalán, alemán y más con racha diaria, juegos, voz y un tutor IA con memoria.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#09070f",
+  "theme_color": "#09070f",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}

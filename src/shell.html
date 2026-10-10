@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Parla</title>
+<link rel="apple-touch-icon" sizes="1024x1024" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="1024x1024" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Parla">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#09070f">
+<link rel="manifest" href="manifest.webmanifest">
+<script>
+// Icono y metadatos de instalación van en <head>, que es donde Safari los busca al añadir a la pantalla de inicio.
+(function () {
+  try {
+    var h = document.head, url = new URL('apple-touch-icon.png', location.href).href;
+    document.body && document.body.querySelectorAll('meta[name="apple-mobile-web-app-capable"],meta[name="mobile-web-app-capable"],meta[name="apple-mobile-web-app-status-bar-style"],meta[name="theme-color"],meta[name="apple-mobile-web-app-title"],link[rel="manifest"]').forEach(function (n) { h.appendChild(n); });
+    [['apple-touch-icon'], ['icon', 'image/png']].forEach(function (x) {
+      h.querySelectorAll('link[rel="' + x[0] + '"]').forEach(function (l) { l.remove(); });
+      var l = document.createElement('link'); l.rel = x[0]; l.href = url; l.setAttribute('sizes', '1024x1024'); if (x[1]) l.type = x[1]; h.appendChild(l);
+    });
+    var t = localStorage.getItem('parla1:theme');
+    document.documentElement.setAttribute('data-app-theme', t || 'dark');
+  } catch (e) { document.documentElement.setAttribute('data-app-theme', 'dark'); }
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap">
+<style>
+/*__CSS__*/
+</style>
+<div id="app" aria-live="off">
+  <header class="top" id="top"></header>
+  <main id="view" class="view"></main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
+<div id="overlay"></div>
+<div id="sheet-root"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<script>
+/*__JS__*/
+</script>
+</body></html>

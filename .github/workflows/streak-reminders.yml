@@ -1,0 +1,27 @@
+# Avisos push de racha (opcional). Necesita GitHub Pages, push-config.json con la clave pública
+# y el secreto VAPID_PRIVATE_KEY. Instrucciones en el README («Avisos push»).
+name: Avisos de racha
+on:
+  schedule:
+    - cron: '2 * * * *'   # cada hora; cada suscripción recibe el aviso en la hora de su recordatorio
+  workflow_dispatch:
+    inputs:
+      all:
+        description: 'Enviar a todos ahora (prueba)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save web-push@3.6.7
+      - run: node scripts/send-reminders.mjs ${{ inputs.all && '--all' || '' }}
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
