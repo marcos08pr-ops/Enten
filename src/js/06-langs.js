@@ -148,6 +148,7 @@ const QUESTS = [
   { id: 'game', em: '🃏', t: (g) => g > 1 ? 'Juega ' + g + ' partidas' : 'Juega una partida', goals: [1, 2], metric: 'games', gems: 10, pref: 'juegos' },
   { id: 'chat', em: '💬', t: (g) => 'Envía ' + g + ' mensajes a tu tutor', goals: [5, 8], metric: 'chat', gems: 15 },
   { id: 'review', em: '🧠', t: (g) => 'Repasa ' + g + ' palabras', goals: [8, 12], metric: 'review', gems: 10 },
+  { id: 'gram', em: '📐', t: (g) => 'Acierta ' + g + ' ejercicios de gramática', goals: [6, 10], metric: 'gram', gems: 10, pref: 'gramatica' },
   { id: 'combo', em: '🔥', t: (g) => 'Consigue un combo de ' + g, goals: [6, 8], metric: 'combo', gems: 10, max: true },
 ];
 

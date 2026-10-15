@@ -13,7 +13,8 @@ function startUnitLesson(ui, li) {
   const due = SRS.due(c, prevIds).slice(0, 2);
   const weak = SRS.weak(c, Object.keys(c.srs || {})).filter((id) => C.byId[id] && newIds.has(id) === false).slice(0, 2);
   const extra = uniq(due.concat(weak)).map((id) => C.byId[id]).filter(Boolean);
-  Lesson.start({ kind: l.review ? 'review' : 'unit', lang, course: C, words: l.words, sents: l.sents, extra, newIds, unit: u, li, title: u.t + ' · ' + l.label });
+  const gram = Gram.forUnit(lang, u, l.review ? 3 : 2, P.profile.level);
+  Lesson.start({ kind: l.review ? 'review' : 'unit', lang, course: C, words: l.words, sents: l.sents, extra, newIds, unit: u, li, gram, title: u.t + ' · ' + l.label });
 }
 function learnedItems(C, c) { return C.units.filter((u) => !u.pending).flatMap((u) => u.words.concat(u.sents)).filter((it) => SRS.get(c, it.id)); }
 function startReview(only) {
@@ -40,7 +41,12 @@ const Lesson = {
     const pr = P.profile;
     spec.level = spec.level || pr.level; spec.prefs = (pr.prefs && pr.prefs.styles) || [];
     spec.custom = P.course(spec.lang).custom || {};
-    const ex = spec.exercises || buildLesson(spec);
+    let ex = spec.exercises || buildLesson(spec);
+    if (spec.gram && spec.gram.length && !spec.exercises) {
+      // la gramática de la unidad sustituye a los últimos ejercicios y se reparte por la lección
+      ex = ex.slice(0, Math.max(4, ex.length - spec.gram.length));
+      spec.gram.forEach((g) => { const from = Math.ceil(ex.length / 3); ex.splice(from + rand(ex.length - from + 1), 0, g); });
+    }
     if (!ex.length) { toast('No hay ejercicios disponibles.'); return; }
     this.st = { spec, ex, i: 0, ok: 0, total: 0, combo: 0, maxCombo: 0, wrongRun: 0, lives: spec.level === 'experto' && spec.kind !== 'placement' ? 3 : 99, t0: Date.now(), retried: false, mistakes: [], cur: {}, answered: false, placeWrong: 0, results2: [] };
     Speech.rate = pr.rate || 0.95; Speech.prefs = pr.voices || {};
@@ -58,7 +64,7 @@ const Lesson = {
     if (timer) this.startTimer(25);
   },
   foot(e) {
-    const skip = e.type === 'speak' ? '<button class="btn text" data-act="ls-nospeak">No puedo hablar ahora</button>' : (e.type === 'listen' || e.type === 'listenPick') ? '<button class="btn text" data-act="ls-nolisten">No puedo escuchar ahora</button>' : '';
+    const skip = e.type === 'speak' || e.type === 'speakTr' ? '<button class="btn text" data-act="ls-nospeak">No puedo hablar ahora</button>' : (e.type === 'listen' || e.type === 'listenPick') ? '<button class="btn text" data-act="ls-nolisten">No puedo escuchar ahora</button>' : '';
     return (e.type === 'match' ? '' : '<button class="btn block" id="ls-check" data-act="ls-check" disabled>Comprobar</button>') + skip;
   },
   body(e) {
@@ -74,7 +80,7 @@ const Lesson = {
           : '<h2 class="prompt-title">¿Cómo se dice «' + esc(it.es) + '»?</h2>') +
           '<div class="opts">' + e.options.map((o, i) => '<button class="opt" data-act="ls-opt" data-i="' + i + '"' + (e.dir === 'es2t' ? ' data-say="' + esc(o) + '"' : '') + '><span class="k">' + (i + 1) + '</span>' + esc(o) + '</button>').join('') + '</div>';
       case 'bank':
-        return '<h2 class="prompt-title">Traduce esta frase</h2><div class="say">' + (e.dir === 't2es' ? sp(it.t) : '') + '<div class="txt">' + esc(e.dir === 't2es' ? it.t : it.es) + '</div></div>' +
+        return (e.drill ? '<div class="row wrap"><span class="tag">' + esc(e.title || '') + '</span></div>' : '') + '<h2 class="prompt-title">' + (e.drill ? 'Ordena las palabras' : 'Traduce esta frase') + '</h2><div class="say">' + (e.dir === 't2es' ? sp(it.t) : '') + '<div class="txt">' + esc(e.dir === 't2es' ? it.t : it.es) + '</div></div>' +
           '<div class="answer-line" id="ls-ans"></div><div class="tiles" id="ls-tiles">' + e.tiles.map((t) => '<button class="tile" data-act="ls-tile" data-i="' + t.i + '">' + esc(t.t) + '</button>').join('') + '</div>';
       case 'type':
         return '<h2 class="prompt-title">Escríbelo en ' + LANGS[lang].es + '</h2><div class="say"><div class="txt">' + esc(it.es) + '</div></div>' + (hints && it.k === 's' ? '<p class="small muted">Pista: empieza por «' + esc(tokens(it.t).slice(0, 2).join(' ')) + '…»</p>' : '') +
@@ -88,9 +94,26 @@ const Lesson = {
       case 'speak': {
         const live = Speech.canListen();
         return '<h2 class="prompt-title">Dilo en voz alta</h2><div class="say">' + sp(it.t) + '<div class="txt">' + esc(it.t) + '<div class="small muted" style="margin-top:4px">' + esc(it.es) + '</div></div></div>' +
-          (live ? '<button class="mic" id="ls-mic" data-act="ls-mic" aria-label="Pulsa y habla">' + ic('mic') + '</button><p class="center small muted" id="ls-mic-hint">Pulsa el micro y lee la frase</p><div class="heard" id="ls-heard"></div>'
-            : '<div class="card flat small fg2">🎙️ Toca el cuadro y pulsa el <b>micrófono del teclado</b> para dictar la frase. Pon el teclado en ' + LANGS[lang].es + ' (en iPhone: Ajustes → General → Teclado → Teclados).</div>' +
-              '<textarea class="input" id="ls-in" rows="2" autocomplete="off" spellcheck="false" lang="' + Speech.tag(lang) + '" placeholder="Dicta aquí…"></textarea><div class="heard" id="ls-heard"></div>');
+          speakInput(lang, live, 'Pulsa el micro y lee la frase');
+      }
+      case 'speakTr': {
+        const live = Speech.canListen();
+        return '<h2 class="prompt-title">Dilo en ' + LANGS[lang].es + ' en voz alta</h2><div class="say"><div class="txt">' + esc(it.es) + '</div></div>' +
+          (hints ? '<p class="small muted">Pista: empieza por «' + esc(tokens(it.t).slice(0, 2).join(' ')) + '…»</p>' : '') + speakInput(lang, live, 'Pulsa el micro y dilo en ' + LANGS[lang].es);
+      }
+      case 'conj': {
+        const T = e.tense, V = e.verb;
+        return '<div class="row wrap"><span class="tag">' + esc(T.name) + '</span><span class="tag">' + esc(T.cefr) + '</span></div><h2 class="prompt-title">Conjuga el verbo</h2>' +
+          '<div class="card flat center"><div class="big-word" style="font-size:28px">' + esc(e.person) + ' <span style="color:var(--accent-hi)">___</span></div><p class="muted">' + esc(V.inf) + ' · ' + esc(V.es) + ' · ' + esc(T.es) + '</p></div>' +
+          (e.mode === 'choice' ? '<div class="opts">' + e.options.map((o, i) => '<button class="opt" data-act="ls-opt" data-i="' + i + '" data-say="' + esc(o) + '"><span class="k">' + (i + 1) + '</span>' + esc(o) + '</button>').join('') + '</div>'
+            : '<input class="input" id="ls-in" autocomplete="off" autocapitalize="off" spellcheck="false" lang="' + Speech.tag(lang) + '" placeholder="Escribe la forma">' + this.keys(lang));
+      }
+      case 'gram': {
+        const parts = e.q.split('___');
+        return '<div class="row wrap"><span class="tag">' + esc(e.title || 'Gramática') + '</span></div><h2 class="prompt-title">' + (e.mode === 'choice' ? 'Elige la opción correcta' : 'Completa la frase') + '</h2>' +
+          '<div class="say"><button class="spk" data-act="say" data-text="' + esc(it.t) + '" data-lang="' + lang + '" aria-label="Escuchar">' + ic('speaker') + '</button><div class="txt">' + esc(parts[0]) + '<span id="ls-gap" style="display:inline-block;min-width:60px;border-bottom:2px solid var(--accent);text-align:center;color:var(--accent-hi)">&nbsp;</span>' + esc(parts[1] || '') + (hints && it.es ? '<div class="small muted" style="margin-top:4px">' + esc(it.es) + '</div>' : '') + '</div></div>' +
+          (e.mode === 'choice' ? '<div class="tiles">' + e.options.map((o, i) => '<button class="tile" data-act="ls-opt" data-i="' + i + '">' + esc(o) + '</button>').join('') + '</div>'
+            : '<input class="input" id="ls-in" autocomplete="off" autocapitalize="off" spellcheck="false" lang="' + Speech.tag(lang) + '" placeholder="Escribe la palabra que falta">' + this.keys(lang));
       }
       case 'match': {
         const L = shuffle(e.items.slice()), R = shuffle(e.items.slice());
@@ -137,9 +160,18 @@ const Lesson = {
         const it = e.item, exp = lang === 'de' ? it.art : it.g === 'f' ? 'la' : 'el', g = e.options[cur.sel];
         return { ok: g === exp, exp, res: { best: (lang === 'ca' && it.art === "l'" ? "l'" + it.noun + ' (' + (it.g === 'f' ? 'femenino' : 'masculino') + ')' : exp + ' ' + it.noun), err: 'gender' }, given: g };
       }
-      case 'bank': { const given = cur.ans.map((i) => e.tiles.find((t) => t.i === i).t).join(' '); const r = checkText(given, answersFor(e).concat(e.dir === 'es2t' ? extraAlts : []), e.dir === 't2es' ? 'es' : lang, 'experto'); return { ok: r.ok, res: r, given }; }
+      case 'bank': { const given = cur.ans.map((i) => e.tiles.find((t) => t.i === i).t).join(' '); const r = checkText(given, answersFor(e).concat(e.dir === 'es2t' ? extraAlts : []), e.dir === 't2es' ? 'es' : lang, 'experto'); if (e.drill) { if (!r.ok) r.err = DRILL_ERR[e.drill] || 'order'; if (e.why) r.note = (r.note ? r.note + ' ' : '') + '💡 ' + e.why; } return { ok: r.ok, res: r, given }; }
       case 'type': case 'listen': { const r = checkText(cur.typed, answersFor(e).concat(extraAlts), lang, lvl); if (e.type === 'listen' && !r.ok && r.err !== 'blank') r.err = r.err === 'accent' ? 'accent' : 'listening'; return { ok: r.ok, res: r, given: cur.typed }; }
-      case 'speak': {
+      case 'conj': case 'gram': {
+        const ansN = e.answers.map(canon);
+        if (e.mode === 'choice') { const g = e.options[cur.sel]; const ok = ansN.indexOf(canon(g)) >= 0; return { ok, res: { best: e.type === 'gram' ? e.item.t : e.person + ' ' + e.answer, err: e.type === 'conj' ? 'conjugation' : DRILL_ERR[e.drill] || 'grammar', note: e.why ? '💡 ' + e.why : '' }, given: g }; }
+        const r = checkText(cur.typed, e.answers, lang, lvl); r.err = r.ok && r.err !== 'accent' ? r.err : (e.type === 'conj' ? 'conjugation' : DRILL_ERR[e.drill] || 'grammar');
+        if (r.ok && r.kind !== 'exact') r.err = 'spelling';
+        r.best = e.type === 'gram' ? e.q.replace('___', r.best || e.answer) : e.person + ' ' + (r.best || e.answer);
+        if (e.why) r.note = (r.note ? r.note + ' ' : '') + '💡 ' + e.why;
+        return { ok: r.ok, res: r, given: cur.typed };
+      }
+      case 'speak': case 'speakTr': {
         const heard = cur.heard || cur.typed || ''; const ans = answersFor(e);
         let best = { score: 0, words: [] }, bestA = ans[0];
         ans.forEach((a) => { const sc = speechScore(heard, a); if (sc.score > best.score) { best = sc; bestA = a; } });
@@ -154,7 +186,7 @@ const Lesson = {
   },
   check() {
     const st = this.st, e = this.ex(); if (st.answered) return;
-    if (e.type !== 'match' && e.type !== 'speak' && !st.cur.timeout && st.cur.sel == null && !st.cur.typed && !st.cur.ans.length) return;
+    if (e.type !== 'match' && e.type !== 'speak' && e.type !== 'speakTr' && !st.cur.timeout && st.cur.sel == null && !st.cur.typed && !st.cur.ans.length) return;
     clearInterval(st.tm); st.answered = true;
     const lang = st.spec.lang, c = P.course(lang);
     const r = this.evaluate(e); st.last = r;
@@ -168,22 +200,23 @@ const Lesson = {
       Memory.record(lang, e, r.ok, r.res, r.given);
     }
     if (st.spec.kind === 'placement') st.results2[st.i] = r.ok;
+    if (r.ok && (e.type === 'conj' || e.type === 'gram' || e.drill)) Quests.bump('gram', 1);
     if (r.ok && (e.type === 'listen' || e.type === 'listenPick')) { Quests.bump('listen', 1); P.stats.listen = (P.stats.listen || 0) + 1; }
-    if (e.type === 'speak' && (st.cur.heard || st.cur.typed)) { Quests.bump('speak', 1); P.stats.speak = (P.stats.speak || 0) + 1; }
+    if ((e.type === 'speak' || e.type === 'speakTr') && (st.cur.heard || st.cur.typed)) { Quests.bump('speak', 1); P.stats.speak = (P.stats.speak || 0) + 1; }
     if (!r.ok && !e.retry && st.spec.kind !== 'placement' && e.type !== 'match') { const copy = Object.assign({}, e, { retry: true }); st.ex.push(copy); }
     this.markOptions(e, r);
     this.feedback(e, r);
   },
   markOptions(e, r) {
-    if (['choice', 'listenPick', 'cloze', 'gender', 'pic'].indexOf(e.type) >= 0) {
+    if (['choice', 'listenPick', 'cloze', 'gender', 'pic'].indexOf(e.type) >= 0 || ((e.type === 'conj' || e.type === 'gram') && e.mode === 'choice')) {
       $$('#ls-body [data-act="ls-opt"]').forEach((b, i) => {
-        const o = e.options[i]; const isAns = e.type === 'pic' ? o.id === e.item.id : e.type === 'gender' ? o === r.exp : o === e.answer;
+        const o = e.options[i]; const isAns = e.type === 'pic' ? o.id === e.item.id : e.type === 'gender' ? o === r.exp : (e.type === 'conj' || e.type === 'gram') ? e.answers.map(canon).indexOf(canon(o)) >= 0 : o === e.answer;
         if (isAns) b.classList.add('ok'); else if (i === this.st.cur.sel) b.classList.add('bad');
         b.disabled = true;
       });
     }
-    if (e.type === 'cloze') { const g = $('#ls-gap'); if (g) g.textContent = e.answer; }
-    if (e.type === 'speak' && this.st.cur.words) { const h = $('#ls-heard'); if (h) h.innerHTML = this.st.cur.words.map((w) => '<span class="' + (w.ok ? 'w-ok' : 'w-no') + '">' + esc(w.w) + '</span>').join(' '); }
+    if (e.type === 'cloze' || e.type === 'gram') { const g = $('#ls-gap'); if (g) g.textContent = e.answer; }
+    if ((e.type === 'speak' || e.type === 'speakTr') && this.st.cur.words) { const h = $('#ls-heard'); if (h) h.innerHTML = this.st.cur.words.map((w) => '<span class="' + (w.ok ? 'w-ok' : 'w-no') + '">' + esc(w.w) + '</span>').join(' '); }
     const inp = $('#ls-in'); if (inp) inp.readOnly = true;
   },
   feedback(e, r) {
@@ -223,7 +256,7 @@ const Lesson = {
   finish() {
     const st = this.st, sp = st.spec, lang = sp.lang, pr = P.profile, c = P.course(lang), stt = P.stats;
     const acc = st.total ? st.ok / st.total : 1, secs = (Date.now() - st.t0) / 1000;
-    let xp = sp.kind === 'unit' || sp.kind === 'review' ? xpFor(sp.level, sp.kind === 'review') : 10;
+    let xp = sp.kind === 'unit' || sp.kind === 'review' ? xpFor(sp.level, sp.kind === 'review') + (sp.unit ? [0, 0, 2, 4, 6][cefrIdx(sp.unit.cefr)] : 0) : 10;
     xp += (acc >= 0.9 ? 5 : 0) + Math.floor(st.maxCombo / 5);
     stt.lessons = (stt.lessons || 0) + 1; stt.secs = (stt.secs || 0) + secs; if (acc === 1) stt.perfect = (stt.perfect || 0) + 1;
     if (sp.unit) { const k = lessonKey(sp.unit, sp.li); const rec = c.lessons[k] || { n: 0, best: 0 }; rec.n++; rec.best = Math.max(rec.best, acc); rec.last = dayKey(); c.lessons[k] = rec; }
@@ -246,6 +279,7 @@ const Lesson = {
       (lvl ? '<div class="card accent"><b>' + (LEVEL_ORDER.indexOf(lvl) > LEVEL_ORDER.indexOf(sp.level) ? '📈 Subo la dificultad a ' : '🫶 Bajo la dificultad a ') + LEVELS[lvl].name + '</b><div class="small fg2">' + esc(LEVELS[lvl].d) + ' Lo puedes cambiar en Ajustes.</div></div>' : '') +
       (mist ? '<div class="card"><h3>Para repasar</h3><div class="list mt">' + mist + '</div><p class="small muted mt">Volverán en tu repaso en el momento justo.</p></div>' : '') +
       '<div class="card flat"><h3>Misiones</h3><div class="stack tight mt">' + Quests.ensure().map(questRow).join('') + '</div></div>' +
+      (guestMode() ? '<button class="btn ghost block" data-act="progress-save">💾 Guardar mi progreso (copiar código)</button>' : '') +
       '</div><div class="ov-foot"><button class="btn block" data-act="ls-close">Continuar</button></div>');
   },
   finishPlacement() {
@@ -268,7 +302,7 @@ ACT['ls-opt'] = (a) => {
   const st = Lesson.st; if (!st || st.answered) return;
   st.cur.sel = +a.dataset.i; $$('#ls-body [data-act="ls-opt"]').forEach((b) => b.classList.toggle('sel', b === a));
   if (a.dataset.say) Speech.speak(a.dataset.say, st.spec.lang);
-  const e = Lesson.ex(); if (e.type === 'cloze') { const g = $('#ls-gap'); if (g) g.textContent = e.options[st.cur.sel]; }
+  const e = Lesson.ex(); if (e.type === 'cloze' || e.type === 'gram') { const g = $('#ls-gap'); if (g) g.textContent = e.options[st.cur.sel]; }
   Sound.play('tap'); Lesson.setReady(true);
 };
 ACT['ls-tile'] = (a) => {
@@ -284,7 +318,7 @@ ACT['ls-tile'] = (a) => {
   Sound.play('tap'); Lesson.setReady(st.cur.ans.length > 0);
 };
 ACT['ls-key'] = (a) => {
-  const inp = $('#ls-in'); if (!inp || inp.readOnly) return;
+  const inp = $('#ls-in') || $('#rl-in') || $('#sa-in'); if (!inp || inp.readOnly || inp.disabled) return;
   const s = inp.selectionStart || inp.value.length, en = inp.selectionEnd || s;
   inp.value = inp.value.slice(0, s) + a.dataset.k + inp.value.slice(en); inp.focus();
   const p = s + a.dataset.k.length; try { inp.setSelectionRange(p, p); } catch (e) {}
@@ -361,3 +395,10 @@ document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Enter') { const n = $('#ls-next') || $('#ls-check'); if (n && !n.disabled) { ev.preventDefault(); n.click(); } }
   else if (/^[1-4]$/.test(ev.key)) { const o = $$('#ls-body [data-act="ls-opt"]')[+ev.key - 1]; if (o && !o.disabled) o.click(); }
 });
+
+/* Micrófono del navegador o, si no hay (iPhone en Claude o app de inicio), dictado del teclado */
+function speakInput(lang, live, hint) {
+  return live ? '<button class="mic" id="ls-mic" data-act="ls-mic" aria-label="Pulsa y habla">' + ic('mic') + '</button><p class="center small muted" id="ls-mic-hint">' + esc(hint) + '</p><div class="heard" id="ls-heard"></div>'
+    : '<div class="card flat small fg2">🎙️ Toca el cuadro y pulsa el <b>micrófono del teclado</b> para dictar. Pon el teclado en ' + LANGS[lang].es + ' (en iPhone: Ajustes → General → Teclado → Teclados).</div>' +
+      '<textarea class="input" id="ls-in" rows="2" autocomplete="off" spellcheck="false" lang="' + Speech.tag(lang) + '" placeholder="Dicta aquí…"></textarea><div class="heard" id="ls-heard"></div>';
+}

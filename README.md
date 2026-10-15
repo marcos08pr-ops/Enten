@@ -8,15 +8,16 @@ Hecha a partir de la experiencia de [Enten](https://github.com/marcos08pr-ops/mi
 
 | | |
 |---|---|
-| **Cursos** | Catalán y alemán para hispanohablantes: 12 unidades (A1 → B1), 120 palabras y 96 frases por idioma, con guía gramatical en cada unidad (falsos amigos de género, «vaig anar» = fui, «halb vier» = 3:30…). Otros idiomas: unidades creadas por el tutor IA. |
+| **Cursos** | Catalán y alemán para hispanohablantes: 24 unidades de A1 a C1 (A1, A2, B1, B2 y C1), 240 palabras y 192 frases por idioma, con guía gramatical en cada unidad (falsos amigos de género, «vaig anar» = fui, «halb vier» = 3:30, subjuntivo, Konjunktiv II, pasiva, registro formal, modismos…). Otros idiomas: unidades creadas por el tutor IA. |
+| **Gramática** | Conjugación de 25 verbos por idioma en todos los tiempos hasta B2 (tablas con audio y práctica a medida), 16 temas por idioma con explicación en cada fallo: artículos y determinantes, posesivos, demostrativos, contracciones, género y número, plurales, pronombres débiles (en, hi, l'hi…), preposiciones, casos alemanes (acusativo, dativo, genitivo, Wechselpräpositionen), declinación del adjetivo, orden de palabras, relativos, pasiva, subjuntivo, Konjunktiv I, conectores y registro formal. Cada unidad mete ejercicios de su gramática y el tutor IA crea temas a medida. |
 | **Ejercicios** | Elegir imagen, traducir con fichas, escribir, dictado, escuchar y elegir, hablar, emparejar, completar huecos y artículos (der/die/das, el/la). |
 | **Dificultad** | Fácil, Normal, Difícil y Experto (3 vidas y cronómetro). La tolerancia con tildes y erratas cambia con el nivel. Se ajusta sola según tu precisión. |
 | **Adaptación** | Repetición espaciada, repaso de lo que fallas, ejercicios que se vuelven más fáciles tras dos fallos seguidos, más ejercicios del tipo que prefieres, prueba de nivel inicial. |
 | **Tutor IA con memoria** | Guarda un resumen de ti, notas (gustos, metas, errores típicos) y tus últimos fallos. Lo usa para explicarte errores, darte el consejo del día, crear lecciones a tu medida y charlar contigo. Puedes ver y borrar lo que sabe en **Perfil**. |
 | **Charla** | Núria (Barcelona) y Lukas (Berlín): conversación libre, «corrígeme todo», dudas en castellano, diario de tres frases y roleplays (panadería de Gràcia, vermut, Döner en Kreuzberg, WG-Casting, tren con retraso…). Corrige tus mensajes, traduce y manda las palabras nuevas a tu repaso. |
 | **Racha** | Como Duolingo: un día cuenta con una lección, meta diaria de XP, protectores de racha (empiezas con uno), recuperación si la pierdes (3 lecciones en el día), hitos con premio, misiones diarias, gemas y XP doble. |
-| **Juegos** | Parejas (memory de cartas), Palabra del día (tipo Wordle/Paraulògic), Contrarreloj, Ahorcado, ¿El o la? / Der-die-das y Anagramas. |
-| **Voz** | Escuchar con las voces del sistema (normal y despacio), hablar con reconocimiento de voz o con el dictado del teclado, modo sombra (shadowing). |
+| **Juegos** | Parejas (memory de cartas), Palabra del día (tipo Wordle/Paraulògic), Contrarreloj, Ahorcado, ¿El o la? / Der-die-das, Anagramas, Verbos contrarreloj, Ruleta de verbos, Determinantes exprés y Género y número. |
+| **Hablar y escuchar** | Voces del sistema (normal y despacio). Para hablar: ejercicios de leer y de traducir en voz alta dentro de las lecciones, y en Practicar → Hablar: responder preguntas de tu nivel (el tutor corrige tu respuesta), leer textos en voz alta, trabalenguas, describir escenas, pares mínimos, modo sombra y conversación por voz con el tutor. Con reconocimiento de voz del navegador o con el dictado del teclado. |
 | **Amigos** | Dentro de Claude, liga semanal con las personas con las que compartes la app. |
 | **Tendencias** | Palabras virales y jerga (Jugendwort 2025 «das crazy», «quina passada», «pixapins»…), métodos que arrasan en redes (shadowing, input comprensible, diario) y series, música y pódcasts para cada idioma. |
 
@@ -25,7 +26,8 @@ Hecha a partir de la experiencia de [Enten](https://github.com/marcos08pr-ops/mi
 Parla se publica como **artefacto privado de Claude**: solo lo abre quien tú invites.
 
 1. Abre <https://claude.ai/artifact/VQBQUga27MKw8UtAbrwhGr> en el iPhone (Safari) y entra con tu cuenta de Claude.
-2. Para invitar a alguien: botón **Compartir** del artefacto → añade su correo con permiso **Colaborador**. Así guarda su propio progreso.
+2. Para invitar a alguien y que su progreso se guarde: botón **Compartir** del artefacto → **desactiva el enlace público** y añade su correo con permiso **Editor**. Claude solo deja guardar datos al propietario y a los editores invitados por correo (en un plan personal, y solo mientras no haya enlace público).
+   - Con el **enlace público** también pueden usarla, pero sin guardar en la nube: su progreso queda en el navegador y en iPhone Safari lo borra al cerrarse. La app se lo avisa y les deja **copiar un código de progreso** para recuperarlo al volver.
 3. Cada persona tiene su racha, su curso y su tutor. El tutor usa la cuenta de Claude de quien lo usa, sin claves.
 4. Para tenerla como app: Safari → **Compartir → Añadir a pantalla de inicio**.
 

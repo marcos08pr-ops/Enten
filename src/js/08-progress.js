@@ -158,7 +158,7 @@ const Board = {
 };
 
 /* ---------- memoria del tutor: fallos, etiquetas y notas ---------- */
-const ERR_NAMES = { gender: 'Género y artículos', order: 'Orden de las palabras', missing: 'Palabras que faltan', spelling: 'Ortografía', accent: 'Tildes y signos', vocab: 'Vocabulario', grammar: 'Gramática', listening: 'Comprensión oral', speaking: 'Pronunciación', blank: 'Respuestas en blanco' };
+const ERR_NAMES = { conjugation: 'Conjugación verbal', determiners: 'Determinantes y artículos', agreement: 'Género y número', pronouns: 'Pronombres', cases: 'Casos (acusativo, dativo…)', prepositions: 'Preposiciones', mood: 'Subjuntivo y modos', connectors: 'Conectores', gender: 'Género y artículos', order: 'Orden de las palabras', missing: 'Palabras que faltan', spelling: 'Ortografía', accent: 'Tildes y signos', vocab: 'Vocabulario', grammar: 'Gramática', listening: 'Comprensión oral', speaking: 'Pronunciación', blank: 'Respuestas en blanco' };
 const Memory = {
   record(lang, e, ok, res, given) {
     const m = P.memory; const err = res && res.err; if (ok && (!err || err === 'spelling')) return;

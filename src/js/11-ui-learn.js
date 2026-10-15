@@ -15,12 +15,13 @@ function renderLearn(v) {
   } else {
     html += '<div class="card flat"><div class="row">' + flameSvg('on') + '<div class="grow"><b>Racha a salvo: ' + plural(n, 'día', 'días') + '</b><div class="small muted">' + (Streak.todayXP() >= (pr.goal || 20) ? 'Meta diaria cumplida. ¡Crack!' : 'Te faltan ' + ((pr.goal || 20) - Streak.todayXP()) + ' XP para tu meta diaria') + '</div></div></div></div>';
   }
+  html += guestBanner();
   // misiones
   html += '<section class="card"><div class="row between"><h3>Misiones de hoy</h3><span class="small muted">' + fmtLeft(msToMidnight()) + '</span></div><div class="stack tight mt">' + Quests.ensure().map(questRow).join('') + '</div></section>';
   // tutor
   html += tutorCard(lang);
   // camino
-  html += C.units.map((u) => unitBlock(u, c, C)).join('');
+  html += C.units.map((u, i) => (i === 0 || C.units[i - 1].cefr !== u.cefr ? levelDivider(u.cefr, C, c) : '') + unitBlock(u, c, C)).join('');
   const all = C.units.every((u) => [0, 1, 2, 3].every((i) => lessonDone(c, u, i)));
   if (all) html += '<div class="card accent center"><h3>🏁 ¡Has terminado el curso!</h3><p class="fg2 small mt">Sigue con lecciones a tu medida que crea tu tutor IA con lo que más te cuesta.</p><button class="btn block mt" data-act="ai-lesson">' + ic('spark') + ' Lección a tu medida</button></div>';
   v.innerHTML = html;
@@ -124,3 +125,10 @@ ACT['gen-unit'] = async (a) => {
     P.saveCourse(lang); markAiOk(); closeSheet(); render(); toast('Unidad lista ✨');
   } catch (e) { closeSheet(); toast(AI.msg(e), 4500); }
 };
+
+const CEFR_DESC = { A1: 'Saludar, presentarte y lo básico del día a día.', A2: 'Rutinas, planes, viajes y contar lo que hiciste.', B1: 'Opinar, narrar el pasado y desenvolverte casi en cualquier situación.', B2: 'Argumentar, hipótesis, noticias y temas abstractos con soltura.', C1: 'Registro formal, matices, modismos y refranes.' };
+function levelDivider(cefr, C, c) {
+  const us = C.units.filter((u) => u.cefr === cefr); let done = 0, tot = 0;
+  us.forEach((u) => { for (let i = 0; i < 4; i++) { tot++; if (lessonDone(c, u, i)) done++; } });
+  return '<div class="level-div"><div class="row between"><span class="lv">' + cefr + ' · ' + esc(CEFR_NAME[cefr] || '') + '</span><span class="small muted">' + Math.round((100 * done) / Math.max(1, tot)) + '%</span></div><p class="small muted">' + esc(CEFR_DESC[cefr] || '') + '</p></div>';
+}

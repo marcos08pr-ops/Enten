@@ -30,6 +30,7 @@ ACT.settings = () => {
     '<section class="stack"><p class="eyebrow">Tutor IA</p>' + aiSettings() + '</section>' +
     '<section class="stack"><p class="eyebrow">Compartir</p><div class="card flat small fg2">' + shareText() + '</div></section>' +
     '<section class="stack"><p class="eyebrow">Tus datos</p><div class="small muted">' + (Store.mode === 'cloud' ? 'Guardados en tu cuenta de Claude, en una carpeta privada solo tuya.' : 'Guardados en este navegador.') + '</div>' +
+      (guestMode() ? '<div class="row"><button class="btn grow" data-act="progress-save">Copiar código de progreso</button><button class="btn ghost grow" data-act="progress-restore">Recuperar</button></div>' : '') +
       '<div class="row"><button class="btn ghost grow" data-act="export">Exportar copia</button><label class="btn ghost grow" for="import-file" style="cursor:pointer">Importar</label><input type="file" id="import-file" accept="application/json,.json" hidden></div>' +
       '<button class="btn bad block" data-act="wipe">Borrar todo mi progreso</button></section>' +
     '<p class="small muted center">Parla · hecha con la experiencia de Enten · ' + (Store.inClaude ? 'dentro de Claude' : 'web') + '</p></div>');
@@ -48,9 +49,9 @@ ACT['voice-test'] = () => { const l = P.profile.active; if (!Speech.hasVoice(l))
 ACT['voice-help'] = () => voiceHelp();
 ACT.placement = () => { closeOverlay(); startPlacement(P.profile.active); };
 function shareText() {
-  return Store.inClaude
-    ? 'Parla es un artefacto privado de Claude: solo lo ve quien tú invites. Usa el botón <b>Compartir</b> del artefacto y añade a cada persona con permiso <b>Colaborador</b>. Cada una tiene su progreso, su racha y su tutor (que usa su propia cuenta de Claude), y aparecéis juntos en la liga de amigos.'
-    : 'Pasa este enlace a quien quieras: ' + esc(Notify.link()) + '. Cada persona guarda su progreso en su propio móvil.';
+  if (!Store.inClaude) return 'Pasa este enlace a quien quieras: ' + esc(Notify.link()) + '. Cada persona guarda su progreso en su propio móvil.';
+  if (guestMode()) return 'Entras sin permiso para guardar en la nube (normalmente, con el enlace público). Pide a quien te pasó Parla que te invite por correo como <b>Editor</b> con el enlace público desactivado. Mientras, guarda tu código de progreso antes de salir.';
+  return 'Para que cada amigo guarde su progreso en la nube: botón <b>Compartir</b> del artefacto → <b>desactiva el enlace público</b> e invita a cada persona con su correo como <b>Editor</b>. Cada una tendrá su racha, su curso y su tutor (que usa su propia cuenta de Claude), y apareceréis en la liga de amigos.<br><br>Con el enlace público también pueden usarla, pero Claude no les deja guardar en la nube y en iPhone se borra al cerrar Safari: la app les ofrece un código para guardar y recuperar su progreso.';
 }
 function aiSettings() {
   if (Store.inClaude) return '<div class="card flat small">' + (AI.ok() ? '✅ Activo con tu cuenta de Claude. No necesitas clave.' : '⚠️ ' + esc(AI.msg({ code: AI.state === 'denied' ? 'not_granted' : 'capability_disabled' }))) + '</div>';
@@ -148,7 +149,8 @@ const Onb = {
   render() {
     const s = this.st, n = s.step; let h = '';
     const dots = n ? '<div class="steps">' + Array.from({ length: this.steps }, (_, i) => '<i class="' + (i < n ? 'on' : '') + '"></i>').join('') + '</div>' : '';
-    if (n === 0) h = '<div class="onb" style="padding-top:8vh"><div class="logo">Parla</div><h1>Aprende catalán, alemán y más, un poco cada día.</h1><p class="fg2">Lecciones de 3 minutos, juegos, voz y un tutor con IA que recuerda tus fallos y tus gustos. Tu racha te espera.</p><div class="row wrap">' + flag('ca', 'lg') + flag('de', 'lg') + flag('en', 'lg') + flag('fr', 'lg') + flag('it', 'lg') + flag('pt', 'lg') + '</div></div>';
+    if (n === 0) h = '<div class="onb" style="padding-top:6vh"><div class="logo">Parla</div><h1>Aprende catalán, alemán y más, un poco cada día.</h1><p class="fg2">Lecciones de 3 minutos, juegos, voz y un tutor con IA que recuerda tus fallos y tus gustos. Tu racha te espera.</p><div class="row wrap">' + flag('ca', 'lg') + flag('de', 'lg') + flag('en', 'lg') + flag('fr', 'lg') + flag('it', 'lg') + flag('pt', 'lg') + '</div>' +
+      '<button class="btn ghost block" data-act="progress-restore">Ya usaba Parla: recuperar mi progreso</button></div>';
     else if (n === 1) h = '<div class="onb"><h2>¿Cómo te llamas?</h2><p class="fg2">Así te hablará tu tutor.</p><input class="input" id="onb-name" maxlength="30" autocomplete="given-name" placeholder="Tu nombre" value="' + esc(s.name) + '"></div>';
     else if (n === 2) h = '<div class="onb"><h2>¿Qué quieres aprender?</h2><div class="stack tight">' + ['ca', 'de', 'en', 'fr', 'it', 'pt'].map((l) => '<button class="lang-card" data-act="onb-lang" data-l="' + l + '" aria-pressed="' + (s.lang === l) + '">' + flag(l, 'lg') + '<div class="grow"><div class="nm">' + esc(LANGS[l].name) + '</div><div class="small muted">' + (LANGS[l].ai ? 'Curso generado por el tutor IA' : 'Curso completo para hispanohablantes') + '</div></div>' + (LANGS[l].ai ? '<span class="tag">IA</span>' : '') + '</button>').join('') + '</div><p class="small muted">Podrás añadir más idiomas cuando quieras.</p></div>';
     else if (n === 3) h = '<div class="onb"><h2>¿Cuánto sabes de ' + esc(LANGS[s.lang].es) + '?</h2><div class="stack tight">' + [['zero', '🌱', 'Empiezo de cero'], ['some', '🌿', 'Sé algunas cosas', 'Hago una prueba de nivel de 2 minutos'], ['good', '🌳', 'Me defiendo bien', 'Prueba de nivel y salto hasta donde llegues']].map((x) => '<button class="lang-card" data-act="onb-start" data-v="' + x[0] + '" aria-pressed="' + (s.start === x[0]) + '"><span style="font-size:30px">' + x[1] + '</span><div class="grow"><div class="nm">' + x[2] + '</div>' + (x[3] ? '<div class="small muted">' + x[3] + '</div>' : '') + '</div></button>').join('') + '</div></div>';

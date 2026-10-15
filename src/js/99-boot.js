@@ -4,6 +4,11 @@ async function boot() {
   Speech.init();
   await Promise.all([Store.init(), AI.init()]);
   await Promise.all(DOCS.map((n) => Store.load(n)));
+  if (Store.mode === 'cloud' && Store.loadFailed.size) {
+    // la nube no ha respondido: no se crean datos vacíos que pisarían tu progreso
+    $('#view').innerHTML = '<div class="card" style="margin-top:20vh"><h3>No he podido cargar tu progreso</h3><p class="small fg2 mt">La conexión con Claude ha fallado. Tu progreso sigue guardado; vuelve a intentarlo.</p><button class="btn block mt" onclick="location.reload()">Reintentar</button></div>';
+    return;
+  }
   if (!Store.get('profile')) Store.save('profile', defaultProfile());
   if (!Store.get('streak')) Store.save('streak', defaultStreak());
   if (!Store.get('stats')) Store.save('stats', defaultStats());
@@ -12,6 +17,8 @@ async function boot() {
   // campos nuevos en perfiles antiguos
   const d = defaultProfile(); Object.keys(d).forEach((k) => { if (pr[k] === undefined) pr[k] = d[k]; });
   if (!LANGS[pr.active]) pr.active = 'ca';
+  // si ya hay progreso, nunca se vuelve a pedir la bienvenida
+  if (!pr.onboarded && ((P.stats && P.stats.xp > 0) || Object.keys((P.streak && P.streak.days) || {}).length || Object.keys(pr.langs || {}).length)) { pr.onboarded = true; P.save('profile'); }
   if (!pr.name && Store.user) { try { const n = await Store.user.name(); if (n) Onb.prefill = n.split(' ')[0]; } catch (e) {} }
   applyTheme(); Sound.on = pr.sound !== false; Speech.rate = pr.rate || 0.95; Speech.prefs = pr.voices || {};
   await Promise.all(uniq([pr.active].concat(Object.keys(pr.langs || {}))).map((l) => P.loadCourse(l)));

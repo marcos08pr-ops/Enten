@@ -190,6 +190,13 @@ textarea.input{min-height:96px;resize:none;line-height:1.4}
 
 /* ---------- camino ---------- */
 .unit{display:flex;flex-direction:column;gap:6px}
+.level-div{display:flex;flex-direction:column;gap:2px;padding:18px 4px 2px;border-top:1px solid var(--line);margin-top:6px}
+.level-div .lv{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-hi);font-stretch:116%}
+.ladder{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.ladder .st{display:flex;flex-direction:column;gap:4px;align-items:center;font-size:11px;font-weight:750;color:var(--fg-3)}
+.ladder .st .b{width:100%;height:8px;border-radius:9px;background:var(--surface-3);overflow:hidden}
+.ladder .st .b i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-lo),var(--accent))}
+.ladder .st.cur{color:var(--accent-hi)}
 .unit-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--r-xl);background:linear-gradient(120deg,var(--accent-lo),color-mix(in srgb,var(--accent-lo) 55%,#1b0f45));color:#fff;box-shadow:0 4px 0 var(--accent-deep)}
 .unit-head.lock{background:var(--surface-2);color:var(--fg-3);box-shadow:0 4px 0 var(--line)}
 .unit-head .u-ic{font-size:30px;line-height:1}

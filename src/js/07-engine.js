@@ -25,7 +25,7 @@ const Course = {
     const units = src.map((u, ui) => {
       const words = (u.w || []).map((s, i) => parseWord(lang, u.id, i, s));
       const sents = (u.s || []).map((s, i) => parseSent(lang, u.id, i, s));
-      return { idx: ui, id: u.id, t: u.t, cefr: u.cefr, icon: u.icon, tip: u.tip || '', words, sents, pending: !!u.pending && !words.length };
+      return { idx: ui, id: u.id, t: u.t, cefr: u.cefr, icon: u.icon, tip: u.tip || '', gr: u.gr || ((typeof UNIT_GR !== 'undefined' && UNIT_GR[lang]) || {})[u.id] || [], words, sents, pending: !!u.pending && !words.length };
     });
     const byId = {}; units.forEach((u) => { u.words.concat(u.sents).forEach((it) => { byId[it.id] = it; }); });
     const c = { lang, units, byId, ai: !!L.ai };
@@ -129,7 +129,7 @@ const SRS = {
     s[4] = t; c.srs[id] = s;
   },
   due(c, ids) { const t = dayNum(); return ids.filter((id) => { const s = c.srs && c.srs[id]; return s && s[1] <= t; }); },
-  learned(c) { return Object.keys(c.srs || {}).filter((id) => c.srs[id][0] >= 2).length; },
+  learned(c) { return Object.keys(c.srs || {}).filter((id) => c.srs[id][0] >= 2 && id.indexOf(':cj:') < 0 && id.indexOf(':gr:') < 0).length; },
   weak(c, ids) {
     return ids.map((id) => ({ id, s: c.srs && c.srs[id] })).filter((x) => x.s && x.s[3] > 0)
       .sort((a, b) => (b.s[3] - b.s[2] * 0.5) - (a.s[3] - a.s[2] * 0.5)).map((x) => x.id);
@@ -139,13 +139,13 @@ const SRS = {
 /* ---------- generador de lecciones ---------- */
 const LEVELS = {
   facil: { n: 8, name: 'Fácil', d: 'Opciones y fichas, pistas, tildes con aviso.', distract: 2,
-    w: { pic: 3, choice: 3, bank: 3, match: 2, listenPick: 1.2, cloze: 2, type: 0.6, listen: 0.6, speak: 0.8, gender: 1 } },
+    w: { pic: 3, choice: 3, bank: 3, match: 2, listenPick: 1.2, cloze: 2, type: 0.6, listen: 0.6, speak: 0.8, speakTr: 0, gender: 1 } },
   normal: { n: 10, name: 'Normal', d: 'Mezcla de todo: fichas, escribir, escuchar y hablar.', distract: 3,
-    w: { pic: 1.2, choice: 2, bank: 3, match: 1, listenPick: 1.6, cloze: 2, type: 2, listen: 1.5, speak: 1.4, gender: 1.2 } },
+    w: { pic: 1.2, choice: 2, bank: 3, match: 1, listenPick: 1.6, cloze: 2, type: 2, listen: 1.5, speak: 1.4, speakTr: 0.7, gender: 1.2 } },
   dificil: { n: 12, name: 'Difícil', d: 'Más escritura y dictados; voz más exigente.', distract: 5,
-    w: { pic: 0.3, choice: 1, bank: 2, match: 0.5, listenPick: 1, cloze: 1, type: 4, listen: 3, speak: 2, gender: 1.5 } },
+    w: { pic: 0.3, choice: 1, bank: 2, match: 0.5, listenPick: 1, cloze: 1, type: 4, listen: 3, speak: 2, speakTr: 1.4, gender: 1.5 } },
   experto: { n: 14, name: 'Experto', d: 'Todo escrito, sin pistas, 3 vidas y cronómetro.', distract: 6,
-    w: { pic: 0, choice: 0.4, bank: 1, match: 0.3, listenPick: 0.6, cloze: 0.6, type: 5, listen: 4, speak: 2.5, gender: 1.5 } },
+    w: { pic: 0, choice: 0.4, bank: 1, match: 0.3, listenPick: 0.6, cloze: 0.6, type: 5, listen: 4, speak: 2.5, speakTr: 2, gender: 1.5 } },
 };
 const LEVEL_ORDER = ['facil', 'normal', 'dificil', 'experto'];
 
@@ -169,15 +169,16 @@ function buildLesson(spec) {
   const canSay = !Session.noSpeak();
   const prefs = spec.prefs || [];
   const W = Object.assign({}, L.w);
-  if (prefs.indexOf('hablar') >= 0) W.speak *= 2;
+  if (prefs.indexOf('hablar') >= 0) { W.speak *= 2; W.speakTr = (W.speakTr || 0.5) * 2; }
   if (prefs.indexOf('escuchar') >= 0) { W.listen *= 1.8; W.listenPick *= 1.8; }
   if (prefs.indexOf('escribir') >= 0) W.type *= 1.6;
   if (prefs.indexOf('juegos') >= 0 || prefs.indexOf('visual') >= 0) { W.match *= 1.5; W.pic *= 1.5; }
   if (prefs.indexOf('gramatica') >= 0) { W.cloze *= 1.5; W.gender *= 1.5; }
   if (!canHear) { W.listen = 0; W.listenPick = 0; }
-  if (!canSay) W.speak = 0;
+  if (!canSay) { W.speak = 0; W.speakTr = 0; }
   if (spec.only === 'listen') Object.keys(W).forEach((k) => { if (k !== 'listen' && k !== 'listenPick') W[k] = 0; });
-  if (spec.only === 'speak') Object.keys(W).forEach((k) => { if (k !== 'speak') W[k] = 0; });
+  if (spec.only === 'speak') Object.keys(W).forEach((k) => { if (k !== 'speak' && k !== 'speakTr') W[k] = 0; });
+  if (spec.only === 'speak' && !W.speakTr) W.speakTr = W.speak * 0.6;
 
   const n = spec.n || L.n + (spec.kind === 'review' ? 2 : 0);
   const out = []; const used = {};
@@ -195,12 +196,12 @@ function buildLesson(spec) {
   while (out.length < n && guard++ < 200) {
     const it = pickItem(pool, used, rng); if (!it) break;
     const w = Object.assign({}, W);
-    if (it.k === 'w') { w.bank = 0; w.cloze = 0; if (!it.em || allW.filter((x) => x.em).length < 4) w.pic = 0; if (!it.g || !GENDER[spec.lang]) w.gender = 0; }
+    if (it.k === 'w') { w.bank = 0; w.cloze = 0; w.speakTr = 0; if (!it.em || allW.filter((x) => x.em).length < 4) w.pic = 0; if (!it.g || !GENDER[spec.lang]) w.gender = 0; }
     else { w.pic = 0; w.gender = 0; w.choice *= 0.5; }
     w.match = 0;
     const last2 = out.slice(-2).map((e) => e.type);
     if (last2.length === 2 && last2[0] === last2[1]) w[last2[0]] = 0;
-    if ((used[it.id] || 0) === 0 && it.k === 's' && spec.newIds && spec.newIds.has(it.id)) { w.type *= 0.4; w.listen *= 0.4; w.bank *= 1.6; }
+    if ((used[it.id] || 0) === 0 && it.k === 's' && spec.newIds && spec.newIds.has(it.id)) { w.type *= 0.4; w.listen *= 0.4; w.bank *= 1.6; w.speakTr = (w.speakTr || 0) * 0.3; }
     const ty = wpick(w, rng); if (!ty) continue;
     let e = null;
     if (ty === 'pic') e = mkPic(it, allW, rng);
@@ -210,6 +211,7 @@ function buildLesson(spec) {
     else if (ty === 'listen') e = { type: 'listen', item: it };
     else if (ty === 'listenPick') e = mkListenPick(it, it.k === 'w' ? allW : allS, rng);
     else if (ty === 'speak') e = { type: 'speak', item: it };
+    else if (ty === 'speakTr') e = { type: 'speakTr', item: it };
     else if (ty === 'cloze') e = mkCloze(it, allS, rng);
     else if (ty === 'gender') e = { type: 'gender', item: it, options: GENDER[spec.lang].opts.slice() };
     if (!e) continue;
@@ -271,6 +273,8 @@ function buildPlacement(C) {
 /* Respuestas válidas de un ejercicio */
 function answersFor(e) {
   const it = e.item;
+  if (e.type === 'gram' || e.type === 'conj') return e.answers;
+  if (e.type === 'speakTr') return [it.t].concat(it.alt || []);
   if (e.type === 'bank') return e.dir === 't2es' ? [it.es].concat(it.altEs || []) : [it.t].concat(it.alt || []);
   if (e.type === 'type') return e.dir === 'es2t' ? [it.t].concat(it.alt || []) : [it.es].concat(it.altEs || []);
   if (e.type === 'listen' || e.type === 'speak') return [it.t].concat(it.alt || []);
@@ -288,6 +292,9 @@ function promptText(e) {
     case 'speak': return 'Di en voz alta: ' + it.t;
     case 'cloze': return 'Completa: ' + e.tokens.map((t, i) => (i === e.idx ? '___' : t)).join(' ');
     case 'gender': return 'Artículo de «' + it.noun + '»';
+    case 'speakTr': return 'Di en voz alta la traducción de: ' + it.es;
+    case 'conj': return 'Conjuga «' + e.verb.inf + '» (' + e.tense.name + ') con «' + e.person + '»';
+    case 'gram': return (e.title ? e.title + ': ' : '') + e.q;
     default: return '';
   }
 }

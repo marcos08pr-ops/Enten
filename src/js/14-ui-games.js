@@ -13,7 +13,7 @@ const GAME_LIST = [
 function renderGames(v) {
   const lang = P.profile.active, st = P.stats, wd = st.wordle && st.wordle.day === dayKey() && st.wordle.lang === lang ? st.wordle : null;
   v.innerHTML = '<div class="hello"><h1>Juegos</h1><p class="fg2">Aprender jugando también suma XP y salva tu racha.</p></div>' +
-    '<div class="grid2">' + GAME_LIST.filter((g) => !g.only || g.only.indexOf(lang) >= 0).map((g) =>
+    '<div class="grid2">' + GAME_LIST.filter((g) => (!g.only || g.only.indexOf(lang) >= 0) && (!g.req || g.req(lang))).map((g) =>
       '<button class="tile-card" data-act="game" data-g="' + g.id + '"><span class="em">' + g.em + '</span><h3>' + esc(g.t) + '</h3><p>' + esc(g.d) + '</p>' + (g.id === 'wordle' ? '<span class="tag ' + (wd && wd.done ? 'good' : 'flame') + '">' + (wd && wd.done ? (wd.won ? 'Resuelta hoy' : 'Mañana otra') : 'Nueva hoy') + '</span>' : (st.best && st.best[g.id + lang] ? '<span class="tag">Récord: ' + st.best[g.id + lang] + '</span>' : '')) + '</button>').join('') + '</div>' +
     '<p class="small muted center">' + plural(st.games || 0, 'partida jugada', 'partidas jugadas') + '</p>';
 }

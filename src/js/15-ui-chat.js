@@ -69,7 +69,7 @@ const Chat = {
         P.save('stats');
         if (d.n % 6 === 0) Memory.consolidate(lang, d.msgs.filter((m) => m.r === 'u' && !m.hidden).slice(-8).map((m) => 'Alumno: ' + m.t).join('\n'));
       }
-      if (P.profile.chatVoice) Speech.speak(p.main, lang);
+      if (P.profile.chatVoice || P.profile.voiceChat) Speech.speak(p.main, lang).then(() => { if (P.profile.voiceChat && App.tab === 'chat' && !$('#overlay').innerHTML) setTimeout(chatAutoListen, 250); });
     } catch (e) {
       const msg = AI.msg(e); if (msg) toast(msg, 4500);
       if (text && e && e.code !== 'cancelled') { /* deja el mensaje para reintentar */ }
@@ -85,7 +85,7 @@ function renderChat(v) {
   if (App.chatMode) { d.mode = App.chatMode; d.msgs = []; d.scen = null; App.chatMode = null; Chat.save(lang); if (AI.ok()) setTimeout(() => Chat.send('(Empieza: pídeme que te cuente mi día en tres frases.)', { hidden: true }), 50); }
   const P_ = L.persona;
   let h = '<div class="chat-head"><span class="avatar">' + P_.em + '</span><div class="grow"><h2>' + esc(P_.name) + '</h2><div class="small muted">' + esc(P_.bio) + '</div></div><button class="icon-btn" data-act="chat-voice" aria-label="Leer respuestas en voz alta" style="color:' + (P.profile.chatVoice ? 'var(--accent-hi)' : 'var(--fg-3)') + '">' + ic('speaker') + '</button><button class="icon-btn" data-act="chat-new" aria-label="Nueva charla">' + ic('refresh') + '</button></div>';
-  h += '<div class="scen">' + CHAT_MODES.concat([{ id: 'diario', t: '📓 Diario' }]).map((m) => '<button class="chip" data-act="chat-mode" data-m="' + m.id + '" aria-pressed="' + ((d.mode || 'libre') === m.id && !d.scen) + '">' + m.t + '</button>').join('') + '</div>';
+  h += '<div class="scen"><button class="chip" data-act="chat-voicemode" aria-pressed="' + !!P.profile.voiceChat + '">🎧 Modo voz</button>' + CHAT_MODES.concat([{ id: 'diario', t: '📓 Diario' }]).map((m) => '<button class="chip" data-act="chat-mode" data-m="' + m.id + '" aria-pressed="' + ((d.mode || 'libre') === m.id && !d.scen) + '">' + m.t + '</button>').join('') + '</div>';
   h += '<div class="scen">' + (L.scen || []).map((s) => '<button class="chip" data-act="chat-scen" data-s="' + s.id + '" aria-pressed="' + (d.scen === s.id) + '">' + esc(s.t) + '</button>').join('') + '</div>';
   if (!AI.ok()) h += '<div class="card warn"><h3>Activa el tutor IA</h3><p class="small fg2 mt">' + esc(AI.msg({ code: AI.state === 'denied' ? 'not_granted' : 'no_ai' })) + '</p>' + (!Store.inClaude ? '<button class="btn sm mt" data-act="settings-ai">Añadir clave</button>' : '') + '</div>';
   h += '<div class="msgs" id="msgs"></div><div style="height:90px"></div>';
@@ -145,10 +145,23 @@ ACT['chat-scen'] = (a) => {
   d.scen = a.dataset.s; d.mode = 'libre'; d.msgs = []; Chat.save(); renderChat($('#view'));
   if (AI.ok()) Chat.send('(Empieza el roleplay tú con un saludo propio de la situación.)', { hidden: true });
 };
-ACT['chat-mic'] = async (a) => {
+ACT['chat-mic'] = async (a, ev, auto) => {
   if (Speech.rec) { Speech.cancelListen(); return; }
   a.classList.add('on'); const ta = $('#chat-in');
-  try { const r = await Speech.listen(P.profile.active, { onInterim: (t) => { ta.value = t; } }); ta.value = r.text; P.stats.speak = (P.stats.speak || 0) + 1; Quests.bump('speak', 1); }
-  catch (e) { if (Speech.micBlocked) { toast('Sin acceso al micro aquí: usa el micrófono del teclado.', 4000); a.remove(); } }
+  try {
+    const r = await Speech.listen(P.profile.active, { max: 12000, onInterim: (t) => { ta.value = t; } }); ta.value = r.text; P.stats.speak = (P.stats.speak || 0) + 1; Quests.bump('speak', 1);
+    if ((auto || P.profile.voiceChat) && r.text.trim()) { a.classList.remove('on'); ACT['chat-send'](); return; }
+  } catch (e) { if (Speech.micBlocked) { toast('Sin acceso al micro aquí: usa el micrófono del teclado.', 4000); a.remove(); } }
   a.classList.remove('on');
+};
+/* Modo voz: el tutor lee su respuesta y después te escucha (o abre el teclado para dictar) */
+function chatAutoListen() {
+  const mic = $('#chat-mic');
+  if (mic && Speech.canListen()) ACT['chat-mic'](mic, null, true);
+  else { const ta = $('#chat-in'); if (ta) ta.focus(); }
+}
+ACT['chat-voicemode'] = () => {
+  const pr = P.profile; pr.voiceChat = !pr.voiceChat; if (pr.voiceChat) pr.chatVoice = true; P.save('profile');
+  toast(pr.voiceChat ? '🎧 Modo voz: te leo cada respuesta' + (Speech.canListen() ? ' y luego te escucho' : '; contesta con el dictado del teclado') : 'Modo voz desactivado');
+  renderChat($('#view'));
 };

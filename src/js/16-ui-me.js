@@ -16,7 +16,8 @@ function renderMe(v) {
     const c = P.course(l); if (!c) return '';
     const C = Course.get(l, c.gen), tot = C.units.length * 4; let done = 0; C.units.forEach((u) => { for (let i = 0; i < 4; i++) if (lessonDone(c, u, i)) done++; });
     const cu = C.units[currentUnit(l)];
-    return '<div class="row">' + flag(l) + '<div class="grow"><div class="row between"><b>' + esc(LANGS[l].name) + '</b><span class="small muted">' + (cu ? cu.cefr : '') + ' · ' + SRS.learned(c) + ' aprendidas</span></div><div class="bar" style="margin-top:6px"><i style="width:' + Math.round((100 * done) / tot) + '%"></i></div></div></div>';
+    const ladder = CEFR.map((lv) => { const us = C.units.filter((u) => u.cefr === lv); if (!us.length) return ''; let d = 0; us.forEach((u) => { for (let i = 0; i < 4; i++) if (lessonDone(c, u, i)) d++; }); return '<div class="st' + (cu && cu.cefr === lv ? ' cur' : '') + '"><span>' + lv + '</span><span class="b"><i style="width:' + Math.round((100 * d) / (us.length * 4)) + '%"></i></span></div>'; }).join('');
+    return '<div><div class="row">' + flag(l) + '<div class="grow"><div class="row between"><b>' + esc(LANGS[l].name) + '</b><span class="small muted">Nivel ' + (cu ? cu.cefr : 'A1') + ' · ' + SRS.learned(c) + ' aprendidas</span></div><div class="bar" style="margin-top:6px"><i style="width:' + Math.round((100 * done) / tot) + '%"></i></div></div></div><div class="ladder">' + ladder + '</div></div>';
   }).join('') + '</div></section>';
   // memoria del tutor
   h += memoryCard();
@@ -70,7 +71,7 @@ ACT['note-del'] = (a) => { const m = P.memory; m.notes = (m.notes || []).filter(
 const League = {
   rows: null, unsub: null, watching: false,
   watch() {
-    if (this.watching || Store.mode !== 'cloud') return; this.watching = true;
+    if (this.watching || !Store.db) return; this.watching = true;
     this.unsub = Store.boardWatch((rows) => { this.rows = rows; const el = $('#league'); if (el && App.tab === 'me') { el.innerHTML = leagueHTML(); this.names(); } });
   },
   async names() {
@@ -82,11 +83,11 @@ const League = {
   },
 };
 function leagueHTML() {
-  if (Store.mode !== 'cloud') return '<h3>Liga de amigos</h3><p class="small fg2 mt">Dentro de Claude, las personas con las que compartas Parla aparecen aquí con su XP semanal y su racha.</p>';
+  if (!Store.db) return '<h3>Liga de amigos</h3><p class="small fg2 mt">Dentro de Claude, las personas con las que compartas Parla aparecen aquí con su XP semanal y su racha.</p>';
   const wk = weekKey(), rows = (League.rows || []).filter((r) => r.wk === wk).sort((a, b) => b.wxp - a.wxp);
   const me = Store.uid;
   return '<div class="row between"><h3>Liga de amigos</h3><span class="small muted">Semana ' + wk.split('-W')[1] + '</span></div>' +
     (rows.length ? '<div class="list mt">' + rows.map((r, i) => '<div class="lb-row' + (r.id === me ? ' me' : '') + '" data-uid="' + esc(r.id) + '"><span class="pos">' + (i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1) + '</span><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"><div class="grow"><b class="nm">' + (r.id === me ? 'Tú' : '…') + '</b><div class="small muted">' + flagText(r.lang) + ' · 🔥 ' + (r.streak || 0) + (r.today ? ' · hoy ✓' : ' · hoy pendiente') + '</div></div><b class="num">' + r.wxp + ' XP</b></div>').join('') + '</div>'
       : '<p class="small fg2 mt">Aún nadie ha sumado XP esta semana. ¡Sé el primero!</p>') +
-    '<p class="small muted mt">Para invitar a alguien: menú Compartir del artefacto → añade su correo con permiso <b>Colaborador</b>, así guarda su propio progreso.</p>';
+    (guestMode() ? '<p class="small muted mt">Tú no apareces porque entras sin permiso para guardar (enlace público). <button class="link" data-act="progress-why">Cómo solucionarlo</button></p>' : '<p class="small muted mt">Para que alguien aparezca: Compartir → desactiva el enlace público e invítale por correo como <b>Editor</b>.</p>');
 }

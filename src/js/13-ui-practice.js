@@ -10,10 +10,12 @@ function renderPractice(v) {
     pTile('weak', '🎯', 'Tus fallos', weakN ? weakN + ' cosas que se te resisten' : 'Aún sin fallos guardados', '') +
     pTile('ai-lesson', '✨', 'A tu medida', AI.ok() ? 'Tu tutor crea una lección con tus fallos y gustos' : 'Necesita el tutor IA', AI.ok() ? 'IA' : '') +
     pTile('listen', '🎧', 'Solo escuchar', 'Dictados y comprensión oral', '') +
-    pTile('speak', '🎙️', 'Solo hablar', 'Lee en voz alta y te corrijo', '') +
-    pTile('shadow', '🗣️', 'Modo sombra', 'Repite a la vez que el audio: el método viral de pronunciación', 'Tendencia') +
+    pTile('speakhub', '🎙️', 'Hablar', '7 actividades: responder, leer, trabalenguas, escenas…', 'Nuevo') +
+    (Gram.has(lang) || AI.ok() ? pTile('gramhub', '📐', 'Gramática', 'Conjugación, determinantes, género y número…', 'Nuevo') : '') +
     '</div>';
   if (weak.length) h += '<section class="card"><h3>Lo que más te cuesta</h3><div class="weak mt">' + weak.map((k) => '<span class="chip">' + esc(ERR_NAMES[k] || k) + '</span>').join('') + '</div><p class="small muted mt">Tus lecciones meten más ejercicios de esto. ' + (AI.ok() ? 'Tu tutor también lo tiene en cuenta.' : '') + '</p></section>';
+  h += speakSection(lang);
+  if (Gram.has(lang) || AI.ok()) h += grammarSection(lang);
   const tr = TRENDS[lang];
   if (tr) h += '<section class="stack"><div><h2>Lo que se lleva</h2><p class="small muted">Jerga, palabras virales y expresiones que oirás en la calle y en redes.</p></div>' +
     '<div class="scen trends">' + tr.map((t, i) => '<div class="card trend"><div class="row between"><span class="tag ' + (/Jugendwort|Viral|viral/.test(t.tag) ? 'flame' : '') + '">' + esc(t.tag) + '</span><button class="spk mini" data-act="say" data-text="' + esc(t.w) + '" aria-label="Escuchar">' + ic('speaker') + '</button></div><div class="w">' + esc(t.w) + '</div><div class="fg2" style="font-weight:600">' + esc(t.es) + '</div><p class="small muted">' + esc(t.n) + '</p><button class="btn text" style="align-self:flex-start;padding:0" data-act="trend-add" data-i="' + i + '">+ Añadir a mi repaso</button></div>').join('') + '</div></section>';
@@ -28,6 +30,7 @@ ACT['p-weak'] = () => startWeak();
 ACT['p-ai-lesson'] = () => ACT['ai-lesson']();
 ACT['p-listen'] = () => { if (!Speech.hasVoice(P.profile.active)) { voiceHelp(); return; } startReview('listen'); };
 ACT['p-speak'] = () => startReview('speak');
+ACT['p-gramhub'] = () => { const el = $('#grammar'); if (el) el.scrollIntoView({ behavior: 'smooth' }); };
 ACT['p-shadow'] = () => Shadow.open();
 ACT.method = (a) => {
   const m = a.dataset.m;
