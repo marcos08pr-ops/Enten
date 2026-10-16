@@ -142,7 +142,7 @@ ACT['sa-pair-pick'] = (a) => {
   Sound.play(ok ? 'ok' : 'bad');
   const other = 1 - st.cur.target;
   $('#sa-pair-say').innerHTML = '<div class="card flat small fg2">' + esc(it.w[0]) + ' = ' + esc(it.m[0] || '') + ' · ' + esc(it.w[1]) + ' = ' + esc(it.m[1] || '') + (it.tip ? '<br>💡 ' + esc(it.tip) + '' : '') + '</div><h3 class="mt">Ahora di «' + esc(it.w[other]) + '»</h3>' + saInput(st.lang, Speech.canListen(), 'Pulsa y dilo');
-  st.cur.sayWord = it.w[other];
+  st.cur.sayWord = it.w[other]; st.cur.notWord = it.w[st.cur.target];
   $('#sa-foot').innerHTML = '<button class="btn block" id="sa-check" data-act="sa-pair-check" disabled>Comprobar</button><button class="btn text" data-act="sa-pair-skip">Saltar</button>';
   SpeakAct.mountInput();
   const mic = $('#sa-mic'); if (mic) mic.dataset.act = 'sa-pair-mic';
@@ -156,8 +156,10 @@ ACT['sa-pair-mic'] = async (a) => {
 ACT['sa-pair-check'] = () => {
   const st = SpeakAct.st, heard = st.cur.heard || st.cur.typed || ''; if (!heard.trim() || st.cur.done) return;
   st.cur.done = true; const inp = $('#sa-in'); if (inp) inp.readOnly = true;
-  const cands = [heard].concat(st.cur.alts || []).map(loose);
-  const said = cands.some((h) => (' ' + h + ' ').indexOf(' ' + loose(st.cur.sayWord) + ' ') >= 0);
+  // si las dos palabras solo se distinguen por tildes o diéresis (schon/schön, mes/més), la transcripción tiene que traerlas
+  const cands = [heard].concat(st.cur.alts || []).map(canon), has = (h, x) => (' ' + h + ' ').indexOf(' ' + x + ' ') >= 0;
+  const w = canon(st.cur.sayWord), strict = loose(w) === loose(st.cur.notWord || '');
+  const said = cands.some((h) => has(h, w)) || (!strict && cands.some((h) => has(loose(h), loose(w))));
   const ok = said && st.cur.listenOk; st.res[st.i] = ok; st.good = st.res.filter(Boolean).length;
   P.stats.speak = (P.stats.speak || 0) + 1; Quests.bump('speak', 1);
   Sound.play(said ? 'ok' : 'bad');
