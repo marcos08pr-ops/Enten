@@ -167,7 +167,7 @@ const Lesson = {
         if (e.mode === 'choice') { const g = e.options[cur.sel]; const ok = ansN.indexOf(canon(g)) >= 0; return { ok, res: { best: e.type === 'gram' ? e.item.t : e.person + ' ' + e.answer, err: e.type === 'conj' ? 'conjugation' : DRILL_ERR[e.drill] || 'grammar', note: e.why ? '💡 ' + e.why : '' }, given: g }; }
         const r = checkText(cur.typed, e.answers, lang, lvl); r.err = r.ok && r.err !== 'accent' ? r.err : (e.type === 'conj' ? 'conjugation' : DRILL_ERR[e.drill] || 'grammar');
         if (r.ok && r.kind !== 'exact') r.err = 'spelling';
-        r.best = e.type === 'gram' ? e.q.replace('___', r.best || e.answer) : e.person + ' ' + (r.best || e.answer);
+        r.best = e.type === 'gram' ? Gram.fill(e.q, r.best || e.answer) : e.person + ' ' + (r.best || e.answer);
         if (e.why) r.note = (r.note ? r.note + ' ' : '') + '💡 ' + e.why;
         return { ok: r.ok, res: r, given: cur.typed };
       }

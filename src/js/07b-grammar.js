@@ -35,6 +35,8 @@ const Gram = {
     return { kind: 'cloze', id, q: f[0], ans: (f[1] || '').split(';').map((x) => x.trim()).filter(Boolean), opts: (f[2] || '').split(';').map((x) => x.trim()).filter(Boolean), es: f[3] || '', why: f[4] || '' };
   },
   items(lang, d) { return d.items.map((s, i) => this.parse(lang, d, s, i)); },
+  /* frase completa sin las pistas entre paréntesis («(jo)», «(der)»…), para mostrarla y leerla en voz alta */
+  fill(q, ans) { return q.replace('___', ans).replace(/\s*\([^)]*\)/g, '').replace(/\s+([.,!?;:])/g, '$1').trim(); },
   /* ---- ejercicios para el reproductor de lecciones ---- */
   drillEx(lang, d, it, level, pool) {
     const rng = Math.random;
@@ -46,7 +48,7 @@ const Gram = {
       return e;
     }
     const typed = (level === 'dificil' && rng() < 0.5) || level === 'experto';
-    const full = it.q.replace('___', it.ans[0]);
+    const full = this.fill(it.q, it.ans[0]);
     return { type: 'gram', mode: typed ? 'type' : 'choice', drill: d.id, title: d.name, why: it.why, q: it.q, answer: it.ans[0], answers: it.ans,
       options: shuffle([it.ans[0]].concat(it.opts.filter((o) => it.ans.map(canon).indexOf(canon(o)) < 0).slice(0, 3)), rng), item: { id: it.id, k: 's', t: full, es: it.es, alt: [], altEs: [] } };
   },

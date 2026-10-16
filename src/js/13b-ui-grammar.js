@@ -25,7 +25,7 @@ function grammarSection(lang) {
 }
 ACT.drill = (a) => {
   const lang = P.profile.active, d = Gram.drill(lang, a.dataset.id); if (!d) return;
-  const ex = Gram.items(lang, d).filter((x) => x.kind === 'cloze').slice(0, 3).map((x) => '<div class="row"><button class="spk mini" data-act="say" data-text="' + esc(x.q.replace('___', x.ans[0])) + '" aria-label="Escuchar">' + ic('speaker') + '</button><div class="grow"><b>' + esc(x.q.replace('___', x.ans[0])) + '</b><div class="small muted">' + esc(x.es) + '</div></div></div>').join('');
+  const ex = Gram.items(lang, d).filter((x) => x.kind === 'cloze').slice(0, 3).map((x) => '<div class="row"><button class="spk mini" data-act="say" data-text="' + esc(Gram.fill(x.q, x.ans[0])) + '" aria-label="Escuchar">' + ic('speaker') + '</button><div class="grow"><b>' + esc(Gram.fill(x.q, x.ans[0])) + '</b><div class="small muted">' + esc(x.es) + '</div></div></div>').join('');
   openSheet('<div class="eyebrow">' + esc(d.cefr) + ' · Gramática</div><h2>' + (d.icon || '') + ' ' + esc(d.name) + '</h2><div class="card flat"><p style="white-space:pre-wrap">' + esc(d.tip || '') + '</p></div>' +
     (ex ? '<h3>Ejemplos</h3><div class="list">' + ex + '</div>' : '') +
     '<button class="btn block" data-act="drill-go" data-id="' + esc(d.id) + '">Practicar · 12 ejercicios</button>' +

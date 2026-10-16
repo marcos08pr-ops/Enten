@@ -5,15 +5,15 @@ const VERBS_DE = {
   persons: ['ich', 'du', 'er / sie / es', 'wir', 'ihr', 'sie / Sie'],
   tenses: [
     { id: 'pres', name: 'Präsens', es: 'Presente', cefr: 'A1',
-      tip: 'Raíz + -e, -st, -t, -en, -t, -en: mache, machst, macht. Si la raíz acaba en -t o -d se añade una -e-: du arbeitest, er arbeitet. Muchos verbos fuertes cambian la vocal solo en du y er/sie/es: fahren → fährst, sprechen → sprichst, lesen → liest. Los separables mandan el prefijo al final: ich stehe auf.' },
+      tip: 'Raíz + -e, -st, -t, -en, -t, -en: mache, machst, macht. Si la raíz acaba en -t o -d se añade una -e-: du arbeitest, er arbeitet. Muchos verbos fuertes cambian la vocal solo en du y er/sie/es: fahren → fährst, sprechen → sprichst, lesen → liest. En la oración principal, los separables mandan el prefijo al final: ich stehe auf.' },
     { id: 'perfekt', name: 'Perfekt', es: 'Pasado hablado (he hecho / hice)', cefr: 'A2',
-      tip: 'Es el pasado normal al hablar: vale para «he hecho» y para «hice». Haben o sein + participio al final: «Ich habe Pizza gegessen». Llevan sein los verbos de movimiento o cambio de estado (gehen, fahren, aufstehen) y sein, bleiben, werden. Participio regular: ge- + raíz + -t (gemacht); los fuertes acaban en -en (gegessen).' },
+      tip: 'Pasado normal al hablar («he hecho» y «hice»): haben o sein + participio al final, «Ich habe Pizza gegessen». Sein con movimiento o cambio de estado sin complemento directo (gehen, fahren, aufstehen) y con sein, bleiben, werden. Participio: ge- + raíz + -t (gemacht); fuertes en -en (gegessen). Modal + otro verbo: doble infinitivo, «Ich habe kommen können».' },
     { id: 'praet', name: 'Präteritum', es: 'Pasado escrito (hice)', cefr: 'B1',
-      tip: 'Es el pasado de los textos escritos y los relatos. Al hablar se prefiere el Perfekt, salvo con sein, haben y los modales: war, hatte, konnte, musste. Regulares: raíz + -te (machte, arbeitete). Fuertes: cambian la vocal y no llevan terminación en ich ni en er/sie/es: ging, kam, fuhr, aß.' },
+      tip: 'Es el pasado de los textos escritos y los relatos. Al hablar se prefiere el Perfekt, salvo con sein, haben y los modales: war, hatte, konnte, musste. Regulares: raíz + -te, o -ete tras -t/-d (machte, arbeitete). Fuertes: cambian la vocal y no llevan terminación en ich ni en er/sie/es: ging, kam, fuhr, aß.' },
     { id: 'fut', name: 'Futur I', es: 'Futuro', cefr: 'B1',
       tip: 'Werden + infinitivo al final de la frase: «Ich werde morgen arbeiten». Para hablar del futuro se usa mucho el presente con una expresión de tiempo: «Morgen arbeite ich». El Futur I añade intención firme, promesa o suposición: «Er wird krank sein» = estará enfermo.' },
     { id: 'konj2', name: 'Konjunktiv II', es: 'Condicional / subjuntivo', cefr: 'B2',
-      tip: 'Sirve para deseos, cortesía e hipótesis, como el condicional y el imperfecto de subjuntivo: «Wenn ich Zeit hätte, würde ich kommen» = si tuviera tiempo, vendría. La mayoría de verbos usan würde + infinitivo; sein, haben, wissen y los modales prefieren su forma propia: wäre, hätte, wüsste, könnte, müsste.' },
+      tip: 'Sirve para deseos, cortesía e hipótesis, como el condicional y el imperfecto de subjuntivo: «Wenn ich Zeit hätte, würde ich kommen» = si tuviera tiempo, vendría. La mayoría de verbos usan würde + infinitivo; sein, haben, wissen y los modales prefieren su forma propia: wäre, hätte, wüsste, könnte, müsste. Algunos fuertes también: käme, ginge, gäbe.' },
     { id: 'plusq', name: 'Plusquamperfekt', es: 'Pluscuamperfecto (había hecho)', cefr: 'B2',
       tip: 'Pasado anterior a otro pasado: hatte o war + participio. «Als ich ankam, war der Zug schon abgefahren» = cuando llegué, el tren ya había salido. Se elige haben o sein igual que en el Perfekt. Es muy frecuente tras nachdem: «Nachdem ich gegessen hatte, ging ich spazieren».' },
   ],
@@ -23,7 +23,7 @@ const VERBS_DE = {
       perfekt: 'habe gemacht|hast gemacht|hat gemacht|haben gemacht|habt gemacht|haben gemacht',
       praet: 'machte|machtest|machte|machten|machtet|machten',
       fut: 'werde machen|wirst machen|wird machen|werden machen|werdet machen|werden machen',
-      konj2: 'würde machen|würdest machen|würde machen|würden machen|würdet machen|würden machen',
+      konj2: 'würde machen;machte|würdest machen;machtest|würde machen;machte|würden machen;machten|würdet machen;machtet|würden machen;machten',
       plusq: 'hatte gemacht|hattest gemacht|hatte gemacht|hatten gemacht|hattet gemacht|hatten gemacht',
     } },
     { inf: 'wohnen', es: 'vivir (residir)', cefr: 'A1', f: {
@@ -31,7 +31,7 @@ const VERBS_DE = {
       perfekt: 'habe gewohnt|hast gewohnt|hat gewohnt|haben gewohnt|habt gewohnt|haben gewohnt',
       praet: 'wohnte|wohntest|wohnte|wohnten|wohntet|wohnten',
       fut: 'werde wohnen|wirst wohnen|wird wohnen|werden wohnen|werdet wohnen|werden wohnen',
-      konj2: 'würde wohnen|würdest wohnen|würde wohnen|würden wohnen|würdet wohnen|würden wohnen',
+      konj2: 'würde wohnen;wohnte|würdest wohnen;wohntest|würde wohnen;wohnte|würden wohnen;wohnten|würdet wohnen;wohntet|würden wohnen;wohnten',
       plusq: 'hatte gewohnt|hattest gewohnt|hatte gewohnt|hatten gewohnt|hattet gewohnt|hatten gewohnt',
     } },
     { inf: 'arbeiten', es: 'trabajar', cefr: 'A1', f: {
@@ -39,7 +39,7 @@ const VERBS_DE = {
       perfekt: 'habe gearbeitet|hast gearbeitet|hat gearbeitet|haben gearbeitet|habt gearbeitet|haben gearbeitet',
       praet: 'arbeitete|arbeitetest|arbeitete|arbeiteten|arbeitetet|arbeiteten',
       fut: 'werde arbeiten|wirst arbeiten|wird arbeiten|werden arbeiten|werdet arbeiten|werden arbeiten',
-      konj2: 'würde arbeiten|würdest arbeiten|würde arbeiten|würden arbeiten|würdet arbeiten|würden arbeiten',
+      konj2: 'würde arbeiten;arbeitete|würdest arbeiten;arbeitetest|würde arbeiten;arbeitete|würden arbeiten;arbeiteten|würdet arbeiten;arbeitetet|würden arbeiten;arbeiteten',
       plusq: 'hatte gearbeitet|hattest gearbeitet|hatte gearbeitet|hatten gearbeitet|hattet gearbeitet|hatten gearbeitet',
     } },
     { inf: 'lernen', es: 'aprender, estudiar', cefr: 'A1', f: {
@@ -47,7 +47,7 @@ const VERBS_DE = {
       perfekt: 'habe gelernt|hast gelernt|hat gelernt|haben gelernt|habt gelernt|haben gelernt',
       praet: 'lernte|lerntest|lernte|lernten|lerntet|lernten',
       fut: 'werde lernen|wirst lernen|wird lernen|werden lernen|werdet lernen|werden lernen',
-      konj2: 'würde lernen|würdest lernen|würde lernen|würden lernen|würdet lernen|würden lernen',
+      konj2: 'würde lernen;lernte|würdest lernen;lerntest|würde lernen;lernte|würden lernen;lernten|würdet lernen;lerntet|würden lernen;lernten',
       plusq: 'hatte gelernt|hattest gelernt|hatte gelernt|hatten gelernt|hattet gelernt|hatten gelernt',
     } },
     { inf: 'spielen', es: 'jugar, tocar (música)', cefr: 'A1', f: {
@@ -55,7 +55,7 @@ const VERBS_DE = {
       perfekt: 'habe gespielt|hast gespielt|hat gespielt|haben gespielt|habt gespielt|haben gespielt',
       praet: 'spielte|spieltest|spielte|spielten|spieltet|spielten',
       fut: 'werde spielen|wirst spielen|wird spielen|werden spielen|werdet spielen|werden spielen',
-      konj2: 'würde spielen|würdest spielen|würde spielen|würden spielen|würdet spielen|würden spielen',
+      konj2: 'würde spielen;spielte|würdest spielen;spieltest|würde spielen;spielte|würden spielen;spielten|würdet spielen;spieltet|würden spielen;spielten',
       plusq: 'hatte gespielt|hattest gespielt|hatte gespielt|hatten gespielt|hattet gespielt|hatten gespielt',
     } },
     { inf: 'kaufen', es: 'comprar', cefr: 'A1', f: {
@@ -63,7 +63,7 @@ const VERBS_DE = {
       perfekt: 'habe gekauft|hast gekauft|hat gekauft|haben gekauft|habt gekauft|haben gekauft',
       praet: 'kaufte|kauftest|kaufte|kauften|kauftet|kauften',
       fut: 'werde kaufen|wirst kaufen|wird kaufen|werden kaufen|werdet kaufen|werden kaufen',
-      konj2: 'würde kaufen|würdest kaufen|würde kaufen|würden kaufen|würdet kaufen|würden kaufen',
+      konj2: 'würde kaufen;kaufte|würdest kaufen;kauftest|würde kaufen;kaufte|würden kaufen;kauften|würdet kaufen;kauftet|würden kaufen;kauften',
       plusq: 'hatte gekauft|hattest gekauft|hatte gekauft|hatten gekauft|hattet gekauft|hatten gekauft',
     } },
     { inf: 'sein', es: 'ser, estar', cefr: 'A1', f: {
@@ -71,7 +71,7 @@ const VERBS_DE = {
       perfekt: 'bin gewesen|bist gewesen|ist gewesen|sind gewesen|seid gewesen|sind gewesen',
       praet: 'war|warst|war|waren|wart|waren',
       fut: 'werde sein|wirst sein|wird sein|werden sein|werdet sein|werden sein',
-      konj2: 'wäre|wärst;wärest|wäre|wären|wärt;wäret|wären',
+      konj2: 'wäre;würde sein|wärst;wärest;würdest sein|wäre;würde sein|wären;würden sein|wärt;wäret;würdet sein|wären;würden sein',
       plusq: 'war gewesen|warst gewesen|war gewesen|waren gewesen|wart gewesen|waren gewesen',
     } },
     { inf: 'haben', es: 'tener', cefr: 'A1', f: {
@@ -79,7 +79,7 @@ const VERBS_DE = {
       perfekt: 'habe gehabt|hast gehabt|hat gehabt|haben gehabt|habt gehabt|haben gehabt',
       praet: 'hatte|hattest|hatte|hatten|hattet|hatten',
       fut: 'werde haben|wirst haben|wird haben|werden haben|werdet haben|werden haben',
-      konj2: 'hätte|hättest|hätte|hätten|hättet|hätten',
+      konj2: 'hätte;würde haben|hättest;würdest haben|hätte;würde haben|hätten;würden haben|hättet;würdet haben|hätten;würden haben',
       plusq: 'hatte gehabt|hattest gehabt|hatte gehabt|hatten gehabt|hattet gehabt|hatten gehabt',
     } },
     { inf: 'werden', es: 'llegar a ser, volverse', cefr: 'A2', f: {
@@ -87,7 +87,7 @@ const VERBS_DE = {
       perfekt: 'bin geworden|bist geworden|ist geworden|sind geworden|seid geworden|sind geworden',
       praet: 'wurde|wurdest|wurde|wurden|wurdet|wurden',
       fut: 'werde werden|wirst werden|wird werden|werden werden|werdet werden|werden werden',
-      konj2: 'würde|würdest|würde|würden|würdet|würden',
+      konj2: 'würde;würde werden|würdest;würdest werden|würde;würde werden|würden;würden werden|würdet;würdet werden|würden;würden werden',
       plusq: 'war geworden|warst geworden|war geworden|waren geworden|wart geworden|waren geworden',
     } },
     { inf: 'gehen', es: 'ir (a pie)', cefr: 'A1', f: {
@@ -111,7 +111,7 @@ const VERBS_DE = {
       perfekt: 'bin gefahren|bist gefahren|ist gefahren|sind gefahren|seid gefahren|sind gefahren',
       praet: 'fuhr|fuhrst|fuhr|fuhren|fuhrt|fuhren',
       fut: 'werde fahren|wirst fahren|wird fahren|werden fahren|werdet fahren|werden fahren',
-      konj2: 'würde fahren;führe|würdest fahren;führest|würde fahren;führe|würden fahren;führen|würdet fahren;führet|würden fahren;führen',
+      konj2: 'würde fahren;führe|würdest fahren;führest;führst|würde fahren;führe|würden fahren;führen|würdet fahren;führet;führt|würden fahren;führen',
       plusq: 'war gefahren|warst gefahren|war gefahren|waren gefahren|wart gefahren|waren gefahren',
     } },
     { inf: 'sehen', es: 'ver', cefr: 'A1', f: {
@@ -119,13 +119,13 @@ const VERBS_DE = {
       perfekt: 'habe gesehen|hast gesehen|hat gesehen|haben gesehen|habt gesehen|haben gesehen',
       praet: 'sah|sahst|sah|sahen|saht|sahen',
       fut: 'werde sehen|wirst sehen|wird sehen|werden sehen|werdet sehen|werden sehen',
-      konj2: 'würde sehen;sähe|würdest sehen;sähest|würde sehen;sähe|würden sehen;sähen|würdet sehen;sähet|würden sehen;sähen',
+      konj2: 'würde sehen;sähe|würdest sehen;sähest;sähst|würde sehen;sähe|würden sehen;sähen|würdet sehen;sähet;säht|würden sehen;sähen',
       plusq: 'hatte gesehen|hattest gesehen|hatte gesehen|hatten gesehen|hattet gesehen|hatten gesehen',
     } },
     { inf: 'lesen', es: 'leer', cefr: 'A1', f: {
       pres: 'lese|liest|liest|lesen|lest|lesen',
       perfekt: 'habe gelesen|hast gelesen|hat gelesen|haben gelesen|habt gelesen|haben gelesen',
-      praet: 'las|last;lasest|las|lasen|last|lasen',
+      praet: 'las|lasest;last|las|lasen|last|lasen',
       fut: 'werde lesen|wirst lesen|wird lesen|werden lesen|werdet lesen|werden lesen',
       konj2: 'würde lesen;läse|würdest lesen;läsest|würde lesen;läse|würden lesen;läsen|würdet lesen;läset|würden lesen;läsen',
       plusq: 'hatte gelesen|hattest gelesen|hatte gelesen|hatten gelesen|hattet gelesen|hatten gelesen',
@@ -133,7 +133,7 @@ const VERBS_DE = {
     { inf: 'essen', es: 'comer', cefr: 'A1', f: {
       pres: 'esse|isst|isst|essen|esst|essen',
       perfekt: 'habe gegessen|hast gegessen|hat gegessen|haben gegessen|habt gegessen|haben gegessen',
-      praet: 'aß|aßest|aß|aßen|aßt|aßen',
+      praet: 'aß|aßest;aßt|aß|aßen|aßt|aßen',
       fut: 'werde essen|wirst essen|wird essen|werden essen|werdet essen|werden essen',
       konj2: 'würde essen;äße|würdest essen;äßest|würde essen;äße|würden essen;äßen|würdet essen;äßet|würden essen;äßen',
       plusq: 'hatte gegessen|hattest gegessen|hatte gegessen|hatten gegessen|hattet gegessen|hatten gegessen',
@@ -143,7 +143,7 @@ const VERBS_DE = {
       perfekt: 'habe gesprochen|hast gesprochen|hat gesprochen|haben gesprochen|habt gesprochen|haben gesprochen',
       praet: 'sprach|sprachst|sprach|sprachen|spracht|sprachen',
       fut: 'werde sprechen|wirst sprechen|wird sprechen|werden sprechen|werdet sprechen|werden sprechen',
-      konj2: 'würde sprechen;spräche|würdest sprechen;sprächest|würde sprechen;spräche|würden sprechen;sprächen|würdet sprechen;sprächet|würden sprechen;sprächen',
+      konj2: 'würde sprechen;spräche|würdest sprechen;sprächest;sprächst|würde sprechen;spräche|würden sprechen;sprächen|würdet sprechen;sprächet;sprächt|würden sprechen;sprächen',
       plusq: 'hatte gesprochen|hattest gesprochen|hatte gesprochen|hatten gesprochen|hattet gesprochen|hatten gesprochen',
     } },
     { inf: 'nehmen', es: 'coger, tomar', cefr: 'A1', f: {
@@ -151,15 +151,15 @@ const VERBS_DE = {
       perfekt: 'habe genommen|hast genommen|hat genommen|haben genommen|habt genommen|haben genommen',
       praet: 'nahm|nahmst|nahm|nahmen|nahmt|nahmen',
       fut: 'werde nehmen|wirst nehmen|wird nehmen|werden nehmen|werdet nehmen|werden nehmen',
-      konj2: 'würde nehmen;nähme|würdest nehmen;nähmest|würde nehmen;nähme|würden nehmen;nähmen|würdet nehmen;nähmet|würden nehmen;nähmen',
+      konj2: 'würde nehmen;nähme|würdest nehmen;nähmest;nähmst|würde nehmen;nähme|würden nehmen;nähmen|würdet nehmen;nähmet;nähmt|würden nehmen;nähmen',
       plusq: 'hatte genommen|hattest genommen|hatte genommen|hatten genommen|hattet genommen|hatten genommen',
     } },
-    { inf: 'geben', es: 'dar', cefr: 'A2', f: {
+    { inf: 'geben', es: 'dar', cefr: 'A1', f: {
       pres: 'gebe|gibst|gibt|geben|gebt|geben',
       perfekt: 'habe gegeben|hast gegeben|hat gegeben|haben gegeben|habt gegeben|haben gegeben',
       praet: 'gab|gabst|gab|gaben|gabt|gaben',
       fut: 'werde geben|wirst geben|wird geben|werden geben|werdet geben|werden geben',
-      konj2: 'würde geben;gäbe|würdest geben;gäbest|würde geben;gäbe|würden geben;gäben|würdet geben;gäbet|würden geben;gäben',
+      konj2: 'würde geben;gäbe|würdest geben;gäbest;gäbst|würde geben;gäbe|würden geben;gäben|würdet geben;gäbet;gäbt|würden geben;gäben',
       plusq: 'hatte gegeben|hattest gegeben|hatte gegeben|hatten gegeben|hattet gegeben|hatten gegeben',
     } },
     { inf: 'schlafen', es: 'dormir', cefr: 'A1', f: {
@@ -183,7 +183,7 @@ const VERBS_DE = {
       perfekt: 'habe gewusst|hast gewusst|hat gewusst|haben gewusst|habt gewusst|haben gewusst',
       praet: 'wusste|wusstest|wusste|wussten|wusstet|wussten',
       fut: 'werde wissen|wirst wissen|wird wissen|werden wissen|werdet wissen|werden wissen',
-      konj2: 'wüsste|wüsstest|wüsste|wüssten|wüsstet|wüssten',
+      konj2: 'wüsste;würde wissen|wüsstest;würdest wissen|wüsste;würde wissen|wüssten;würden wissen|wüsstet;würdet wissen|wüssten;würden wissen',
       plusq: 'hatte gewusst|hattest gewusst|hatte gewusst|hatten gewusst|hattet gewusst|hatten gewusst',
     } },
     { inf: 'können', es: 'poder, saber (hacer algo)', cefr: 'A1', f: {
@@ -191,7 +191,7 @@ const VERBS_DE = {
       perfekt: 'habe gekonnt|hast gekonnt|hat gekonnt|haben gekonnt|habt gekonnt|haben gekonnt',
       praet: 'konnte|konntest|konnte|konnten|konntet|konnten',
       fut: 'werde können|wirst können|wird können|werden können|werdet können|werden können',
-      konj2: 'könnte|könntest|könnte|könnten|könntet|könnten',
+      konj2: 'könnte;würde können|könntest;würdest können|könnte;würde können|könnten;würden können|könntet;würdet können|könnten;würden können',
       plusq: 'hatte gekonnt|hattest gekonnt|hatte gekonnt|hatten gekonnt|hattet gekonnt|hatten gekonnt',
     } },
     { inf: 'müssen', es: 'tener que, deber', cefr: 'A1', f: {
@@ -199,7 +199,7 @@ const VERBS_DE = {
       perfekt: 'habe gemusst|hast gemusst|hat gemusst|haben gemusst|habt gemusst|haben gemusst',
       praet: 'musste|musstest|musste|mussten|musstet|mussten',
       fut: 'werde müssen|wirst müssen|wird müssen|werden müssen|werdet müssen|werden müssen',
-      konj2: 'müsste|müsstest|müsste|müssten|müsstet|müssten',
+      konj2: 'müsste;würde müssen|müsstest;würdest müssen|müsste;würde müssen|müssten;würden müssen|müsstet;würdet müssen|müssten;würden müssen',
       plusq: 'hatte gemusst|hattest gemusst|hatte gemusst|hatten gemusst|hattet gemusst|hatten gemusst',
     } },
     { inf: 'wollen', es: 'querer', cefr: 'A1', f: {
@@ -207,7 +207,7 @@ const VERBS_DE = {
       perfekt: 'habe gewollt|hast gewollt|hat gewollt|haben gewollt|habt gewollt|haben gewollt',
       praet: 'wollte|wolltest|wollte|wollten|wolltet|wollten',
       fut: 'werde wollen|wirst wollen|wird wollen|werden wollen|werdet wollen|werden wollen',
-      konj2: 'wollte|wolltest|wollte|wollten|wolltet|wollten',
+      konj2: 'wollte;würde wollen|wolltest;würdest wollen|wollte;würde wollen|wollten;würden wollen|wolltet;würdet wollen|wollten;würden wollen',
       plusq: 'hatte gewollt|hattest gewollt|hatte gewollt|hatten gewollt|hattet gewollt|hatten gewollt',
     } },
     { inf: 'aufstehen', es: 'levantarse', cefr: 'A1', f: {
@@ -215,7 +215,7 @@ const VERBS_DE = {
       perfekt: 'bin aufgestanden|bist aufgestanden|ist aufgestanden|sind aufgestanden|seid aufgestanden|sind aufgestanden',
       praet: 'stand auf|standest auf;standst auf|stand auf|standen auf|standet auf|standen auf',
       fut: 'werde aufstehen|wirst aufstehen|wird aufstehen|werden aufstehen|werdet aufstehen|werden aufstehen',
-      konj2: 'würde aufstehen|würdest aufstehen|würde aufstehen|würden aufstehen|würdet aufstehen|würden aufstehen',
+      konj2: 'würde aufstehen;stünde auf;stände auf|würdest aufstehen;stündest auf;ständest auf|würde aufstehen;stünde auf;stände auf|würden aufstehen;stünden auf;ständen auf|würdet aufstehen;stündet auf;ständet auf|würden aufstehen;stünden auf;ständen auf',
       plusq: 'war aufgestanden|warst aufgestanden|war aufgestanden|waren aufgestanden|wart aufgestanden|waren aufgestanden',
     } },
   ],
