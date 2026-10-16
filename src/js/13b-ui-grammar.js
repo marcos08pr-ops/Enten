@@ -97,7 +97,7 @@ ACT['aig-go'] = async (a) => {
   try {
     const r = await AI.json({ system: 'Eres profesor de ' + LANGS[lang].es + ' para hispanohablantes de España. Tus ejercicios son correctos, naturales y sin ambigüedad.',
       prompt: Memory.context(lang) + '\n\nCrea ejercicios sobre «' + topic + '» a su nivel. Devuelve {"name": "nombre corto del tema en castellano", "tip": "explicación en castellano, 300-600 caracteres", "items": [12 strings "frase en ' + LANGS[lang].es + ' con exactamente un ___|respuesta correcta|error típico 1;error típico 2;error típico 3|traducción al castellano de la frase completa|por qué, en castellano, máximo 120 caracteres"]}. Sin el carácter | dentro de los textos. Los distractores deben ser claramente incorrectos en esa frase.' });
-    const items = (r.items || []).filter((x) => typeof x === 'string' && x.split('|').length >= 4 && x.split('|')[0].split('___').length === 2).slice(0, 14);
+    const items = (r.items || []).filter((x) => typeof x === 'string' && x.split('|').length >= 4 && x.split('|')[0].split('___').length === 2 && (x.split('|')[2] || '').trim()).slice(0, 14);
     if (items.length < 5) throw { code: 'invalid_json' };
     const d = { id: 'ai' + hash(topic).toString(36), name: String(r.name || topic).slice(0, 60), cefr: userCefr(lang), icon: '✨', tip: String(r.tip || '').slice(0, 800), items };
     markAiOk(); closeSheet(true);

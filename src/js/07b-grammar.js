@@ -48,7 +48,7 @@ const Gram = {
     const typed = (level === 'dificil' && rng() < 0.5) || level === 'experto';
     const full = it.q.replace('___', it.ans[0]);
     return { type: 'gram', mode: typed ? 'type' : 'choice', drill: d.id, title: d.name, why: it.why, q: it.q, answer: it.ans[0], answers: it.ans,
-      options: shuffle([it.ans[0]].concat(it.opts.slice(0, 3)), rng), item: { id: it.id, k: 's', t: full, es: it.es, alt: [], altEs: [] } };
+      options: shuffle([it.ans[0]].concat(it.opts.filter((o) => it.ans.map(canon).indexOf(canon(o)) < 0).slice(0, 3)), rng), item: { id: it.id, k: 's', t: full, es: it.es, alt: [], altEs: [] } };
   },
   conjEx(lang, v, tenseId, p, level) {
     const V = this.verbsData(lang), T = this.tense(lang, tenseId), forms = this.forms(v, tenseId); if (!forms) return null;

@@ -38,7 +38,7 @@ const SpeakAct = {
     if (kind !== 'pairs') { const fit = items.filter((x) => cefrIdx(x.cefr) <= my + 1); if (fit.length >= K.n) items = fit; }
     // primero los de tu nivel, luego algo por encima
     items = shuffle(items).sort((a, b) => Math.abs(cefrIdx(a.cefr) - my) - Math.abs(cefrIdx(b.cefr) - my)).slice(0, K.n);
-    this.st = { kind, K, lang, items: shuffle(items), i: 0, good: 0, t0: Date.now() };
+    this.st = { kind, K, lang, items: shuffle(items), i: 0, good: 0, res: [], t0: Date.now() };
     this.render();
   },
   render() {
@@ -92,7 +92,8 @@ const SpeakAct = {
         } catch (e) { /* sin IA: valen las palabras clave */ }
       }
     }
-    if (ok) { st.good++; Sound.play('ok'); } else Sound.play('bad');
+    st.res[st.i] = ok; st.good = st.res.filter(Boolean).length;
+    Sound.play(ok ? 'ok' : 'bad');
     const say = st.kind === 'reading' || st.kind === 'tongue' ? it.t : it.model;
     $('#sa-foot').innerHTML = '<div class="fb ' + (ok ? 'ok' : 'bad') + '"><h3>' + (ok ? ic('check') + ' ¡Muy bien!' : '💪 Casi, sigue así') + '</h3>' + html +
       '<div class="row wrap">' + (say ? '<button class="btn sm ghost" data-act="say" data-text="' + esc(say) + '">' + ic('speaker', 'sm') + ' Escuchar</button>' : '') + '<button class="btn sm ghost" data-act="sa-retry">Repetir</button></div>' +
@@ -147,16 +148,17 @@ ACT['sa-pair-pick'] = (a) => {
   const mic = $('#sa-mic'); if (mic) mic.dataset.act = 'sa-pair-mic';
 };
 ACT['sa-pair-mic'] = async (a) => {
-  const st = SpeakAct.st; if (Speech.rec) { Speech.cancelListen(); return; }
+  const st = SpeakAct.st; if (!st || st.cur.done) return; if (Speech.rec) { Speech.cancelListen(); return; }
   a.classList.add('on');
   try { const r = await Speech.listen(st.lang, { max: 5000, onInterim: (t) => { $('#sa-heard').textContent = t; } }); st.cur.heard = r.text; st.cur.alts = r.alts; a.classList.remove('on'); ACT['sa-pair-check'](); }
   catch (e) { a.classList.remove('on'); if (Speech.micBlocked) { toast('Usa el dictado del teclado.'); } $('#sa-hint').textContent = 'No te he oído. Prueba otra vez.'; }
 };
 ACT['sa-pair-check'] = () => {
-  const st = SpeakAct.st, heard = st.cur.heard || st.cur.typed || ''; if (!heard.trim()) return;
+  const st = SpeakAct.st, heard = st.cur.heard || st.cur.typed || ''; if (!heard.trim() || st.cur.done) return;
+  st.cur.done = true; const inp = $('#sa-in'); if (inp) inp.readOnly = true;
   const cands = [heard].concat(st.cur.alts || []).map(loose);
   const said = cands.some((h) => (' ' + h + ' ').indexOf(' ' + loose(st.cur.sayWord) + ' ') >= 0);
-  const ok = said && st.cur.listenOk; if (ok) st.good++;
+  const ok = said && st.cur.listenOk; st.res[st.i] = ok; st.good = st.res.filter(Boolean).length;
   P.stats.speak = (P.stats.speak || 0) + 1; Quests.bump('speak', 1);
   Sound.play(said ? 'ok' : 'bad');
   $('#sa-foot').innerHTML = '<div class="fb ' + (said ? 'ok' : 'bad') + '"><h3>' + (said ? '✓ Te he entendido «' + esc(st.cur.sayWord) + '»' : 'He oído «' + esc(heard) + '»') + '</h3>' + (said ? '' : '<div class="small fg2">Exagera la diferencia de sonido y repite.</div>') +
