@@ -28,7 +28,7 @@ function render() {
   else if (tab === 'chat') renderChat(v);
   else if (tab === 'me') renderMe(v);
 }
-function go(tab) { if (App.tab === tab) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } App.tab = tab; render(); window.scrollTo(0, 0); }
+function go(tab) { if (App.tab === tab) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } if (App.tab === 'chat') Chat.quiet(); App.tab = tab; render(); window.scrollTo(0, 0); }
 
 function renderTop() {
   const pr = P.profile, s = P.streak, lang = pr.active, n = Streak.count(), today = Streak.todayXP(), goal = pr.goal || 20;

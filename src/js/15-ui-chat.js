@@ -2,7 +2,9 @@
    El tutor responde en el idioma que aprendes, corrige tus mensajes, traduce si lo pides y guarda
    palabras nuevas en tu repaso. Lo que aprende de ti pasa a su memoria. */
 const Chat = {
-  busy: false, ctl: null,
+  busy: false, ctl: null, sayTok: 0,
+  /* corta la lectura en voz alta y la escucha del modo voz (al salir de la charla o al silenciar) */
+  quiet() { this.sayTok++; Speech.stop(); Speech.cancelListen(); },
   key(lang) { return 'chat_' + lang; },
   async load(lang) { let d = await Store.load(this.key(lang)); if (!d) { d = { msgs: [], scen: null, mode: 'libre', n: 0 }; Store.save(this.key(lang), d); } return d; },
   doc(lang) { return Store.get(this.key(lang || P.profile.active)); },
@@ -69,7 +71,7 @@ const Chat = {
         P.save('stats');
         if (d.n % 6 === 0) Memory.consolidate(lang, d.msgs.filter((m) => m.r === 'u' && !m.hidden).slice(-8).map((m) => 'Alumno: ' + m.t).join('\n'));
       }
-      if (P.profile.chatVoice || P.profile.voiceChat) Speech.speak(p.main, lang).then(() => { if (P.profile.voiceChat && App.tab === 'chat' && !$('#overlay').innerHTML) setTimeout(chatAutoListen, 250); });
+      if (P.profile.chatVoice || P.profile.voiceChat) { const tok = ++Chat.sayTok; Speech.speak(p.main, lang).then((done) => { if (done && tok === Chat.sayTok && P.profile.voiceChat && App.tab === 'chat' && !$('#overlay').innerHTML) setTimeout(() => { if (tok === Chat.sayTok) chatAutoListen(); }, 250); }); }
     } catch (e) {
       const msg = AI.msg(e); if (msg) toast(msg, 4500);
       if (text && e && e.code !== 'cancelled') { /* deja el mensaje para reintentar */ }
@@ -128,7 +130,7 @@ function showComposer() {
 function hideComposer() { const c = $('#composer'); if (c) c.hidden = true; }
 ACT['chat-send'] = () => { const ta = $('#chat-in'); const t = ta.value.trim(); if (!t || Chat.busy) return; ta.value = ''; ta.style.height = 'auto'; Chat.send(t); };
 ACT['chat-tr'] = (a) => { const d = Chat.doc(); const m = d.msgs[+a.dataset.i]; if (m) { m.showTr = !m.showTr; renderChatMsgs(); } };
-ACT['chat-voice'] = () => { P.profile.chatVoice = !P.profile.chatVoice; P.save('profile'); toast(P.profile.chatVoice ? 'Leeré las respuestas en voz alta' : 'Voz desactivada en la charla'); renderChat($('#view')); };
+ACT['chat-voice'] = () => { P.profile.chatVoice = !P.profile.chatVoice; if (!P.profile.chatVoice) { P.profile.voiceChat = false; Chat.quiet(); } P.save('profile'); toast(P.profile.chatVoice ? 'Leeré las respuestas en voz alta' : 'Voz desactivada en la charla'); renderChat($('#view')); };
 ACT['chat-new'] = async () => {
   const d = Chat.doc(); if (d.msgs.length && !(await confirmBox({ title: '¿Empezar una charla nueva?', text: 'Se borra esta conversación. Tu tutor conserva lo que ha aprendido de ti.', ok: 'Nueva charla' }))) return;
   if (Chat.ctl) Chat.ctl.abort(); d.msgs = []; d.scen = null; Chat.save(); renderChat($('#view'));
@@ -150,18 +152,19 @@ ACT['chat-mic'] = async (a, ev, auto) => {
   a.classList.add('on'); const ta = $('#chat-in');
   try {
     const r = await Speech.listen(P.profile.active, { max: 12000, onInterim: (t) => { ta.value = t; } }); ta.value = r.text; P.stats.speak = (P.stats.speak || 0) + 1; Quests.bump('speak', 1);
-    if ((auto || P.profile.voiceChat) && r.text.trim()) { a.classList.remove('on'); ACT['chat-send'](); return; }
+    if ((auto || P.profile.voiceChat) && r.text.trim() && App.tab === 'chat' && document.body.contains(a)) { a.classList.remove('on'); ACT['chat-send'](); return; }
   } catch (e) { if (Speech.micBlocked) { toast('Sin acceso al micro aquí: usa el micrófono del teclado.', 4000); a.remove(); } }
   a.classList.remove('on');
 };
 /* Modo voz: el tutor lee su respuesta y después te escucha (o abre el teclado para dictar) */
 function chatAutoListen() {
   const mic = $('#chat-mic');
+  if (Speech.rec || Chat.busy) return; // ya está escuchando o pensando
   if (mic && Speech.canListen()) ACT['chat-mic'](mic, null, true);
   else { const ta = $('#chat-in'); if (ta) ta.focus(); }
 }
 ACT['chat-voicemode'] = () => {
-  const pr = P.profile; pr.voiceChat = !pr.voiceChat; if (pr.voiceChat) pr.chatVoice = true; P.save('profile');
+  const pr = P.profile; pr.voiceChat = !pr.voiceChat; if (pr.voiceChat) pr.chatVoice = true; else Chat.quiet(); P.save('profile');
   toast(pr.voiceChat ? '🎧 Modo voz: te leo cada respuesta' + (Speech.canListen() ? ' y luego te escucho' : '; contesta con el dictado del teclado') : 'Modo voz desactivado');
   renderChat($('#view'));
 };

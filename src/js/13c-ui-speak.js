@@ -127,9 +127,10 @@ ACT['sa-mic'] = async (a) => {
   Speech.stop(); a.classList.add('on'); $('#sa-hint').textContent = 'Escuchando…';
   try {
     const r = await Speech.listen(st.lang, { max: st.kind === 'reading' ? 30000 : st.kind === 'scenes' ? 15000 : 10000, onInterim: (t) => { $('#sa-heard').textContent = t; } });
+    if (SpeakAct.st !== st || st.cur.done || !document.body.contains(a)) return;
     st.cur.heard = r.text; st.cur.alts = r.alts; a.classList.remove('on'); SpeakAct.check();
   } catch (e) {
-    a.classList.remove('on');
+    a.classList.remove('on'); if (SpeakAct.st !== st || !$('#sa-hint')) return;
     if (Speech.micBlocked) { toast('No tengo acceso al micrófono aquí: usa el dictado del teclado.', 4000); SpeakAct.render(); }
     else $('#sa-hint').textContent = e.code === 'no-speech' ? 'No te he oído. Pulsa y prueba otra vez.' : 'Algo falló con el micro. Prueba otra vez.';
   }
@@ -151,8 +152,17 @@ ACT['sa-pair-pick'] = (a) => {
 ACT['sa-pair-mic'] = async (a) => {
   const st = SpeakAct.st; if (!st || st.cur.done) return; if (Speech.rec) { Speech.cancelListen(); return; }
   a.classList.add('on');
-  try { const r = await Speech.listen(st.lang, { max: 5000, onInterim: (t) => { $('#sa-heard').textContent = t; } }); st.cur.heard = r.text; st.cur.alts = r.alts; a.classList.remove('on'); ACT['sa-pair-check'](); }
-  catch (e) { a.classList.remove('on'); if (Speech.micBlocked) { toast('Usa el dictado del teclado.'); } $('#sa-hint').textContent = 'No te he oído. Prueba otra vez.'; }
+  try {
+    const r = await Speech.listen(st.lang, { max: 5000, onInterim: (t) => { const h = $('#sa-heard'); if (h) h.textContent = t; } });
+    if (SpeakAct.st !== st || st.cur.done || !document.body.contains(a)) return;
+    st.cur.heard = r.text; st.cur.alts = r.alts; a.classList.remove('on'); ACT['sa-pair-check']();
+  } catch (e) {
+    a.classList.remove('on'); if (SpeakAct.st !== st || st.cur.done || !document.body.contains(a)) return;
+    if (Speech.micBlocked) { // sin micro: dictado del teclado en su lugar
+      ['#sa-mic', '#sa-hint', '#sa-heard'].forEach((s) => { const el = $(s); if (el) el.remove(); });
+      $('#sa-pair-say').insertAdjacentHTML('beforeend', saInput(st.lang, false, '')); SpeakAct.mountInput(); toast('Sin micro aquí: dicta con el teclado.', 3500);
+    } else { const h = $('#sa-hint'); if (h) h.textContent = 'No te he oído. Prueba otra vez.'; }
+  }
 };
 ACT['sa-pair-check'] = () => {
   const st = SpeakAct.st, heard = st.cur.heard || st.cur.typed || ''; if (!heard.trim() || st.cur.done) return;

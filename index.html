@@ -3104,8 +3104,9 @@ function speechScore(heard, target) {
     if ((tw[i - 1] === hw[j - 1] || lev(tw[i - 1], hw[j - 1]) <= (tw[i - 1].length > 5 ? 1 : 0)) && dp[i][j] === dp[i - 1][j - 1] + 1) { hit[i - 1] = true; i--; j--; }
     else if (dp[i - 1][j] >= dp[i][j - 1]) i--; else j--;
   }
-  const orig = String(target).replace(PUNCT, ' ').split(/\s+/).filter(Boolean);
-  return { score: dp[n][m] / Math.max(n, 1), words: orig.map((w, k) => ({ w, ok: !!hit[k] })) };
+  // cada palabra del texto puede ser varias al normalizar (l'aigua → l aigua): se marcan en bloque
+  const orig = String(target).split(/\s+/).filter(Boolean); let k = 0;
+  return { score: dp[n][m] / Math.max(n, 1), words: orig.map((w) => { const c = loose(w).split(' ').filter(Boolean).length; const ok = c ? hit.slice(k, k + c).every(Boolean) : true; k += c; return { w, ok }; }) };
 }
 const SPEAK_PASS = { facil: 0.6, normal: 0.72, dificil: 0.82, experto: 0.9 };
 
@@ -3780,7 +3781,7 @@ function render() {
   else if (tab === 'chat') renderChat(v);
   else if (tab === 'me') renderMe(v);
 }
-function go(tab) { if (App.tab === tab) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } App.tab = tab; render(); window.scrollTo(0, 0); }
+function go(tab) { if (App.tab === tab) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } if (App.tab === 'chat') Chat.quiet(); App.tab = tab; render(); window.scrollTo(0, 0); }
 
 function renderTop() {
   const pr = P.profile, s = P.streak, lang = pr.active, n = Streak.count(), today = Streak.todayXP(), goal = pr.goal || 20;
@@ -4811,9 +4812,10 @@ ACT['sa-mic'] = async (a) => {
   Speech.stop(); a.classList.add('on'); $('#sa-hint').textContent = 'Escuchando…';
   try {
     const r = await Speech.listen(st.lang, { max: st.kind === 'reading' ? 30000 : st.kind === 'scenes' ? 15000 : 10000, onInterim: (t) => { $('#sa-heard').textContent = t; } });
+    if (SpeakAct.st !== st || st.cur.done || !document.body.contains(a)) return;
     st.cur.heard = r.text; st.cur.alts = r.alts; a.classList.remove('on'); SpeakAct.check();
   } catch (e) {
-    a.classList.remove('on');
+    a.classList.remove('on'); if (SpeakAct.st !== st || !$('#sa-hint')) return;
     if (Speech.micBlocked) { toast('No tengo acceso al micrófono aquí: usa el dictado del teclado.', 4000); SpeakAct.render(); }
     else $('#sa-hint').textContent = e.code === 'no-speech' ? 'No te he oído. Pulsa y prueba otra vez.' : 'Algo falló con el micro. Prueba otra vez.';
   }
@@ -4835,8 +4837,17 @@ ACT['sa-pair-pick'] = (a) => {
 ACT['sa-pair-mic'] = async (a) => {
   const st = SpeakAct.st; if (!st || st.cur.done) return; if (Speech.rec) { Speech.cancelListen(); return; }
   a.classList.add('on');
-  try { const r = await Speech.listen(st.lang, { max: 5000, onInterim: (t) => { $('#sa-heard').textContent = t; } }); st.cur.heard = r.text; st.cur.alts = r.alts; a.classList.remove('on'); ACT['sa-pair-check'](); }
-  catch (e) { a.classList.remove('on'); if (Speech.micBlocked) { toast('Usa el dictado del teclado.'); } $('#sa-hint').textContent = 'No te he oído. Prueba otra vez.'; }
+  try {
+    const r = await Speech.listen(st.lang, { max: 5000, onInterim: (t) => { const h = $('#sa-heard'); if (h) h.textContent = t; } });
+    if (SpeakAct.st !== st || st.cur.done || !document.body.contains(a)) return;
+    st.cur.heard = r.text; st.cur.alts = r.alts; a.classList.remove('on'); ACT['sa-pair-check']();
+  } catch (e) {
+    a.classList.remove('on'); if (SpeakAct.st !== st || st.cur.done || !document.body.contains(a)) return;
+    if (Speech.micBlocked) { // sin micro: dictado del teclado en su lugar
+      ['#sa-mic', '#sa-hint', '#sa-heard'].forEach((s) => { const el = $(s); if (el) el.remove(); });
+      $('#sa-pair-say').insertAdjacentHTML('beforeend', saInput(st.lang, false, '')); SpeakAct.mountInput(); toast('Sin micro aquí: dicta con el teclado.', 3500);
+    } else { const h = $('#sa-hint'); if (h) h.textContent = 'No te he oído. Prueba otra vez.'; }
+  }
 };
 ACT['sa-pair-check'] = () => {
   const st = SpeakAct.st, heard = st.cur.heard || st.cur.typed || ''; if (!heard.trim() || st.cur.done) return;
@@ -5231,7 +5242,9 @@ ACT.game = (a) => { const g = a.dataset.g; Sound.init(); ({ memory: Memory_G, wo
    El tutor responde en el idioma que aprendes, corrige tus mensajes, traduce si lo pides y guarda
    palabras nuevas en tu repaso. Lo que aprende de ti pasa a su memoria. */
 const Chat = {
-  busy: false, ctl: null,
+  busy: false, ctl: null, sayTok: 0,
+  /* corta la lectura en voz alta y la escucha del modo voz (al salir de la charla o al silenciar) */
+  quiet() { this.sayTok++; Speech.stop(); Speech.cancelListen(); },
   key(lang) { return 'chat_' + lang; },
   async load(lang) { let d = await Store.load(this.key(lang)); if (!d) { d = { msgs: [], scen: null, mode: 'libre', n: 0 }; Store.save(this.key(lang), d); } return d; },
   doc(lang) { return Store.get(this.key(lang || P.profile.active)); },
@@ -5298,7 +5311,7 @@ const Chat = {
         P.save('stats');
         if (d.n % 6 === 0) Memory.consolidate(lang, d.msgs.filter((m) => m.r === 'u' && !m.hidden).slice(-8).map((m) => 'Alumno: ' + m.t).join('\n'));
       }
-      if (P.profile.chatVoice || P.profile.voiceChat) Speech.speak(p.main, lang).then(() => { if (P.profile.voiceChat && App.tab === 'chat' && !$('#overlay').innerHTML) setTimeout(chatAutoListen, 250); });
+      if (P.profile.chatVoice || P.profile.voiceChat) { const tok = ++Chat.sayTok; Speech.speak(p.main, lang).then((done) => { if (done && tok === Chat.sayTok && P.profile.voiceChat && App.tab === 'chat' && !$('#overlay').innerHTML) setTimeout(() => { if (tok === Chat.sayTok) chatAutoListen(); }, 250); }); }
     } catch (e) {
       const msg = AI.msg(e); if (msg) toast(msg, 4500);
       if (text && e && e.code !== 'cancelled') { /* deja el mensaje para reintentar */ }
@@ -5357,7 +5370,7 @@ function showComposer() {
 function hideComposer() { const c = $('#composer'); if (c) c.hidden = true; }
 ACT['chat-send'] = () => { const ta = $('#chat-in'); const t = ta.value.trim(); if (!t || Chat.busy) return; ta.value = ''; ta.style.height = 'auto'; Chat.send(t); };
 ACT['chat-tr'] = (a) => { const d = Chat.doc(); const m = d.msgs[+a.dataset.i]; if (m) { m.showTr = !m.showTr; renderChatMsgs(); } };
-ACT['chat-voice'] = () => { P.profile.chatVoice = !P.profile.chatVoice; P.save('profile'); toast(P.profile.chatVoice ? 'Leeré las respuestas en voz alta' : 'Voz desactivada en la charla'); renderChat($('#view')); };
+ACT['chat-voice'] = () => { P.profile.chatVoice = !P.profile.chatVoice; if (!P.profile.chatVoice) { P.profile.voiceChat = false; Chat.quiet(); } P.save('profile'); toast(P.profile.chatVoice ? 'Leeré las respuestas en voz alta' : 'Voz desactivada en la charla'); renderChat($('#view')); };
 ACT['chat-new'] = async () => {
   const d = Chat.doc(); if (d.msgs.length && !(await confirmBox({ title: '¿Empezar una charla nueva?', text: 'Se borra esta conversación. Tu tutor conserva lo que ha aprendido de ti.', ok: 'Nueva charla' }))) return;
   if (Chat.ctl) Chat.ctl.abort(); d.msgs = []; d.scen = null; Chat.save(); renderChat($('#view'));
@@ -5379,18 +5392,19 @@ ACT['chat-mic'] = async (a, ev, auto) => {
   a.classList.add('on'); const ta = $('#chat-in');
   try {
     const r = await Speech.listen(P.profile.active, { max: 12000, onInterim: (t) => { ta.value = t; } }); ta.value = r.text; P.stats.speak = (P.stats.speak || 0) + 1; Quests.bump('speak', 1);
-    if ((auto || P.profile.voiceChat) && r.text.trim()) { a.classList.remove('on'); ACT['chat-send'](); return; }
+    if ((auto || P.profile.voiceChat) && r.text.trim() && App.tab === 'chat' && document.body.contains(a)) { a.classList.remove('on'); ACT['chat-send'](); return; }
   } catch (e) { if (Speech.micBlocked) { toast('Sin acceso al micro aquí: usa el micrófono del teclado.', 4000); a.remove(); } }
   a.classList.remove('on');
 };
 /* Modo voz: el tutor lee su respuesta y después te escucha (o abre el teclado para dictar) */
 function chatAutoListen() {
   const mic = $('#chat-mic');
+  if (Speech.rec || Chat.busy) return; // ya está escuchando o pensando
   if (mic && Speech.canListen()) ACT['chat-mic'](mic, null, true);
   else { const ta = $('#chat-in'); if (ta) ta.focus(); }
 }
 ACT['chat-voicemode'] = () => {
-  const pr = P.profile; pr.voiceChat = !pr.voiceChat; if (pr.voiceChat) pr.chatVoice = true; P.save('profile');
+  const pr = P.profile; pr.voiceChat = !pr.voiceChat; if (pr.voiceChat) pr.chatVoice = true; else Chat.quiet(); P.save('profile');
   toast(pr.voiceChat ? '🎧 Modo voz: te leo cada respuesta' + (Speech.canListen() ? ' y luego te escucho' : '; contesta con el dictado del teclado') : 'Modo voz desactivado');
   renderChat($('#view'));
 };

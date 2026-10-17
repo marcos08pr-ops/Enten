@@ -110,8 +110,9 @@ function speechScore(heard, target) {
     if ((tw[i - 1] === hw[j - 1] || lev(tw[i - 1], hw[j - 1]) <= (tw[i - 1].length > 5 ? 1 : 0)) && dp[i][j] === dp[i - 1][j - 1] + 1) { hit[i - 1] = true; i--; j--; }
     else if (dp[i - 1][j] >= dp[i][j - 1]) i--; else j--;
   }
-  const orig = String(target).replace(PUNCT, ' ').split(/\s+/).filter(Boolean);
-  return { score: dp[n][m] / Math.max(n, 1), words: orig.map((w, k) => ({ w, ok: !!hit[k] })) };
+  // cada palabra del texto puede ser varias al normalizar (l'aigua → l aigua): se marcan en bloque
+  const orig = String(target).split(/\s+/).filter(Boolean); let k = 0;
+  return { score: dp[n][m] / Math.max(n, 1), words: orig.map((w) => { const c = loose(w).split(' ').filter(Boolean).length; const ok = c ? hit.slice(k, k + c).every(Boolean) : true; k += c; return { w, ok }; }) };
 }
 const SPEAK_PASS = { facil: 0.6, normal: 0.72, dificil: 0.82, experto: 0.9 };
 
