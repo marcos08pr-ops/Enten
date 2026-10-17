@@ -25,7 +25,7 @@ const Store = {
       }
       if (this.db && this.uid) {
         // false = la plataforma ya dice que no puede escribir (p. ej., entra por el enlace público)
-        if (this.canWrite === false || (this.canWrite !== true && !this.owner && this.lsGet('ro:' + this.uid))) this.readOnly = true;
+        if (this.canWrite === false || (this.canWrite !== true && !this.owner && Date.now() - (+this.lsGet('ro:' + this.uid) || 0) < 3 * 864e5)) this.readOnly = true;
         else this.mode = 'cloud';
       } else if (this.inClaude) this.readOnly = true;
     } catch (e) { console.warn('db no disponible', e); this.readOnly = true; }
@@ -41,7 +41,7 @@ const Store = {
   /* Copias locales posibles (incluidas las de versiones anteriores de la app), de la más fiable a la menos. */
   localCandidates(name) {
     const keys = uniq([this.localKey(name), name].concat(this.uid ? [this.cloudKey(name)] : []));
-    return keys.map((k, i) => { const v = this.lsGet(k); if (!v) return null; const data = v.data !== undefined ? v.data : v; return data ? { data, t: (data && data._t) || 0, rank: i, dirty: !!v.dirty } : null; }).filter(Boolean);
+    return keys.map((k, i) => { const v = this.lsGet(k); if (!v) return null; const data = v.data !== undefined ? v.data : v; return data ? { data, t: (data && data._t) || 0, rank: i, dirty: !!v.dirty, mirror: k === this.cloudKey(name) } : null; }).filter(Boolean);
   },
   newest(list) { return list.slice().sort((a, b) => (b.t - a.t) || (a.rank - b.rank))[0] || null; },
 
@@ -55,8 +55,10 @@ const Store = {
         try { const s = await this.ref(name).get(); cloud = s.exists ? clone(s.data()) : null; ok = true; }
         catch (e) { if (e && (e.code === 'unavailable' || e.code === 'resource_exhausted')) { await sleep(500 + Math.random() * 700 * (i + 1)); continue; } break; }
       }
-      if (!ok) { if (!local) this.loadFailed.add(name); data = local ? local.data : null; }
-      else if (local && (!cloud || (local.t && local.t > ((cloud && cloud._t) || 0)))) { data = local.data; this.save(name, data, 300); }
+      // sin respuesta de la nube solo vale una copia local con cambios sin subir; si no, mejor reintentar que pisar la nube con datos viejos
+      if (!ok) { if (!local || !local.dirty) this.loadFailed.add(name); data = local && local.dirty ? local.data : null; }
+      // una copia local gana si tiene cambios sin subir o viene de antes de usar la nube; una copia limpia de la nube nunca resucita lo borrado
+      else if (local && (local.dirty || !local.mirror) && (!cloud ? (local.dirty || local.t) : (local.dirty && !local.t) || local.t > (cloud._t || 0))) { data = local.data; this.save(name, data, 300); }
       else { data = cloud; if (cloud) this.lsSet(this.cloudKey(name), { data: cloud }); }
     } else data = local ? local.data : null;
     this.docs[name] = data;
@@ -67,6 +69,7 @@ const Store = {
   save(name, data, delay) {
     if (data && typeof data === 'object') data._t = Date.now();
     this.docs[name] = data; this.changedSinceBackup = true;
+    if (this.mode === 'cloud' && this.loadFailed.has(name)) return; // no se pudo leer: no se escribe encima
     const json = JSON.stringify(data);
     if (json && json.length > 240000) console.warn('Documento grande', name, json.length);
     if (this.mode !== 'cloud') { this.lsSet(this.localKey(name), { data }); return; }
@@ -98,7 +101,7 @@ const Store = {
   toLocal() {
     if (this.mode !== 'cloud') return;
     this.mode = 'local'; this.readOnly = true; this.pend.forEach((p) => clearTimeout(p.t)); this.pend.clear();
-    if (this.uid) this.lsSet('ro:' + this.uid, 1);
+    if (this.uid) this.lsSet('ro:' + this.uid, Date.now());
     Object.keys(this.docs).forEach((k) => { if (this.docs[k] != null) this.lsSet(this.localKey(k), { data: this.docs[k] }); this.lsSet(this.cloudKey(k), null); });
     if (typeof onReadOnly === 'function') onReadOnly();
   },

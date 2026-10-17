@@ -58,7 +58,7 @@ const Lesson = {
     const prog = st.i / st.ex.length;
     const top = '<div class="ov-top"><button class="icon-btn" data-act="ls-quit" aria-label="Salir">' + ic('close') + '</button><div class="ls-prog bar"><i style="width:' + (prog * 100) + '%"></i></div>' +
       (st.lives < 99 ? '<span class="lives">❤️ ' + st.lives + '</span>' : st.combo >= 3 ? '<span class="combo">🔥 ×' + st.combo + '</span>' : '') + '</div>';
-    const timer = lvl === 'experto' && ['match', 'speak'].indexOf(e.type) < 0 && st.spec.kind !== 'placement' ? '<div class="timer"><i id="ls-timer" style="width:100%"></i></div>' : '';
+    const timer = lvl === 'experto' && ['match', 'speak', 'speakTr'].indexOf(e.type) < 0 && st.spec.kind !== 'placement' ? '<div class="timer"><i id="ls-timer" style="width:100%"></i></div>' : '';
     const root = openOverlay(top + timer + '<div class="ov-body" id="ls-body">' + this.body(e) + '</div><div class="ov-foot" id="ls-foot">' + this.foot(e) + '</div>');
     this.mount(root, e);
     if (timer) this.startTimer(25);
@@ -165,8 +165,9 @@ const Lesson = {
       case 'conj': case 'gram': {
         const ansN = e.answers.map(canon);
         if (e.mode === 'choice') { const g = e.options[cur.sel]; const ok = ansN.indexOf(canon(g)) >= 0; return { ok, res: { best: e.type === 'gram' ? e.item.t : e.person + ' ' + e.answer, err: e.type === 'conj' ? 'conjugation' : DRILL_ERR[e.drill] || 'grammar', note: e.why ? '💡 ' + e.why : '' }, given: g }; }
-        const r = checkText(cur.typed, e.answers, lang, lvl); r.err = r.ok && r.err !== 'accent' ? r.err : (e.type === 'conj' ? 'conjugation' : DRILL_ERR[e.drill] || 'grammar');
-        if (r.ok && r.kind !== 'exact') r.err = 'spelling';
+        // en gramática una letra o una tilde cambian la forma: sin tolerancia de erratas
+        const r = checkText(cur.typed, e.answers, lang, 'experto'); r.err = e.type === 'conj' ? 'conjugation' : DRILL_ERR[e.drill] || 'grammar';
+        if (r.kind === 'accent') r.note = 'Fíjate en las tildes o la diéresis: cambian la forma.';
         r.best = e.type === 'gram' ? Gram.fill(e.q, r.best || e.answer) : e.person + ' ' + (r.best || e.answer);
         if (e.why) r.note = (r.note ? r.note + ' ' : '') + '💡 ' + e.why;
         return { ok: r.ok, res: r, given: cur.typed };

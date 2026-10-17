@@ -75,6 +75,7 @@ const Ruleta = {
     const V = Gram.verbsData(lang); let k = 0; const el = $('#rl-spin');
     const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const tick = setInterval(() => {
+      if (Games.cur !== g || !document.body.contains(el)) { clearInterval(tick); return; }
       k++; const vv = V.verbs[rand(V.verbs.length)];
       el.textContent = V.persons[rand(6)].split(' / ')[0] + ' · ' + vv.inf; Sound.play('tap');
       if (k >= (reduce ? 1 : 9)) {

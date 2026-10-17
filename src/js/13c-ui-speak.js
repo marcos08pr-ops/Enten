@@ -90,6 +90,7 @@ const SpeakAct = {
           html = '<div class="small muted">Te he entendido: «' + esc(heard) + '»</div><div class="mt"><span class="small muted">Mejor así</span><div style="font-weight:650">' + esc(j.correccion || it.model) + '</div></div>' + (j.consejo ? '<div class="note mt">💡 ' + esc(j.consejo) + '</div>' : '');
           if (!ok && j.correccion) Memory.record(lang, { type: 'speak', item: { id: '', t: j.correccion, es: '' } }, false, { best: j.correccion, err: 'speaking' }, heard);
         } catch (e) { /* sin IA: valen las palabras clave */ }
+        if (this.st !== st || !$('#sa-foot')) return; // la actividad se cerró mientras respondía el tutor
       }
     }
     st.res[st.i] = ok; st.good = st.res.filter(Boolean).length;
@@ -125,7 +126,7 @@ ACT['sa-mic'] = async (a) => {
   if (Speech.rec) { Speech.cancelListen(); return; }
   Speech.stop(); a.classList.add('on'); $('#sa-hint').textContent = 'Escuchando…';
   try {
-    const r = await Speech.listen(st.lang, { max: st.kind === 'reading' || st.kind === 'scenes' ? 15000 : 10000, onInterim: (t) => { $('#sa-heard').textContent = t; } });
+    const r = await Speech.listen(st.lang, { max: st.kind === 'reading' ? 30000 : st.kind === 'scenes' ? 15000 : 10000, onInterim: (t) => { $('#sa-heard').textContent = t; } });
     st.cur.heard = r.text; st.cur.alts = r.alts; a.classList.remove('on'); SpeakAct.check();
   } catch (e) {
     a.classList.remove('on');

@@ -617,7 +617,7 @@ const Store = {
       }
       if (this.db && this.uid) {
         // false = la plataforma ya dice que no puede escribir (p. ej., entra por el enlace público)
-        if (this.canWrite === false || (this.canWrite !== true && !this.owner && this.lsGet('ro:' + this.uid))) this.readOnly = true;
+        if (this.canWrite === false || (this.canWrite !== true && !this.owner && Date.now() - (+this.lsGet('ro:' + this.uid) || 0) < 3 * 864e5)) this.readOnly = true;
         else this.mode = 'cloud';
       } else if (this.inClaude) this.readOnly = true;
     } catch (e) { console.warn('db no disponible', e); this.readOnly = true; }
@@ -633,7 +633,7 @@ const Store = {
   /* Copias locales posibles (incluidas las de versiones anteriores de la app), de la más fiable a la menos. */
   localCandidates(name) {
     const keys = uniq([this.localKey(name), name].concat(this.uid ? [this.cloudKey(name)] : []));
-    return keys.map((k, i) => { const v = this.lsGet(k); if (!v) return null; const data = v.data !== undefined ? v.data : v; return data ? { data, t: (data && data._t) || 0, rank: i, dirty: !!v.dirty } : null; }).filter(Boolean);
+    return keys.map((k, i) => { const v = this.lsGet(k); if (!v) return null; const data = v.data !== undefined ? v.data : v; return data ? { data, t: (data && data._t) || 0, rank: i, dirty: !!v.dirty, mirror: k === this.cloudKey(name) } : null; }).filter(Boolean);
   },
   newest(list) { return list.slice().sort((a, b) => (b.t - a.t) || (a.rank - b.rank))[0] || null; },
 
@@ -647,8 +647,10 @@ const Store = {
         try { const s = await this.ref(name).get(); cloud = s.exists ? clone(s.data()) : null; ok = true; }
         catch (e) { if (e && (e.code === 'unavailable' || e.code === 'resource_exhausted')) { await sleep(500 + Math.random() * 700 * (i + 1)); continue; } break; }
       }
-      if (!ok) { if (!local) this.loadFailed.add(name); data = local ? local.data : null; }
-      else if (local && (!cloud || (local.t && local.t > ((cloud && cloud._t) || 0)))) { data = local.data; this.save(name, data, 300); }
+      // sin respuesta de la nube solo vale una copia local con cambios sin subir; si no, mejor reintentar que pisar la nube con datos viejos
+      if (!ok) { if (!local || !local.dirty) this.loadFailed.add(name); data = local && local.dirty ? local.data : null; }
+      // una copia local gana si tiene cambios sin subir o viene de antes de usar la nube; una copia limpia de la nube nunca resucita lo borrado
+      else if (local && (local.dirty || !local.mirror) && (!cloud ? (local.dirty || local.t) : (local.dirty && !local.t) || local.t > (cloud._t || 0))) { data = local.data; this.save(name, data, 300); }
       else { data = cloud; if (cloud) this.lsSet(this.cloudKey(name), { data: cloud }); }
     } else data = local ? local.data : null;
     this.docs[name] = data;
@@ -659,6 +661,7 @@ const Store = {
   save(name, data, delay) {
     if (data && typeof data === 'object') data._t = Date.now();
     this.docs[name] = data; this.changedSinceBackup = true;
+    if (this.mode === 'cloud' && this.loadFailed.has(name)) return; // no se pudo leer: no se escribe encima
     const json = JSON.stringify(data);
     if (json && json.length > 240000) console.warn('Documento grande', name, json.length);
     if (this.mode !== 'cloud') { this.lsSet(this.localKey(name), { data }); return; }
@@ -690,7 +693,7 @@ const Store = {
   toLocal() {
     if (this.mode !== 'cloud') return;
     this.mode = 'local'; this.readOnly = true; this.pend.forEach((p) => clearTimeout(p.t)); this.pend.clear();
-    if (this.uid) this.lsSet('ro:' + this.uid, 1);
+    if (this.uid) this.lsSet('ro:' + this.uid, Date.now());
     Object.keys(this.docs).forEach((k) => { if (this.docs[k] != null) this.lsSet(this.localKey(k), { data: this.docs[k] }); this.lsSet(this.cloudKey(k), null); });
     if (typeof onReadOnly === 'function') onReadOnly();
   },
@@ -3424,7 +3427,7 @@ const P = {
   saveCourse(lang) { const n = 'course_' + (lang || P.profile.active); Store.save(n, Store.get(n)); },
   async loadCourse(lang) {
     const n = 'course_' + lang; let c = await Store.load(n);
-    if (!c) { c = defaultCourse(); Store.save(n, c); }
+    if (!c) { c = defaultCourse(); Store.save(n, c); if (Store.loadFailed.has(n)) toast('No he podido cargar este curso: recarga para no perder tu progreso.', 6000); }
     return c;
   },
   courseData(lang) { lang = lang || P.profile.active; const c = P.course(lang); return Course.get(lang, c && c.gen); },
@@ -4089,7 +4092,7 @@ const Lesson = {
     const prog = st.i / st.ex.length;
     const top = '<div class="ov-top"><button class="icon-btn" data-act="ls-quit" aria-label="Salir">' + ic('close') + '</button><div class="ls-prog bar"><i style="width:' + (prog * 100) + '%"></i></div>' +
       (st.lives < 99 ? '<span class="lives">❤️ ' + st.lives + '</span>' : st.combo >= 3 ? '<span class="combo">🔥 ×' + st.combo + '</span>' : '') + '</div>';
-    const timer = lvl === 'experto' && ['match', 'speak'].indexOf(e.type) < 0 && st.spec.kind !== 'placement' ? '<div class="timer"><i id="ls-timer" style="width:100%"></i></div>' : '';
+    const timer = lvl === 'experto' && ['match', 'speak', 'speakTr'].indexOf(e.type) < 0 && st.spec.kind !== 'placement' ? '<div class="timer"><i id="ls-timer" style="width:100%"></i></div>' : '';
     const root = openOverlay(top + timer + '<div class="ov-body" id="ls-body">' + this.body(e) + '</div><div class="ov-foot" id="ls-foot">' + this.foot(e) + '</div>');
     this.mount(root, e);
     if (timer) this.startTimer(25);
@@ -4196,8 +4199,9 @@ const Lesson = {
       case 'conj': case 'gram': {
         const ansN = e.answers.map(canon);
         if (e.mode === 'choice') { const g = e.options[cur.sel]; const ok = ansN.indexOf(canon(g)) >= 0; return { ok, res: { best: e.type === 'gram' ? e.item.t : e.person + ' ' + e.answer, err: e.type === 'conj' ? 'conjugation' : DRILL_ERR[e.drill] || 'grammar', note: e.why ? '💡 ' + e.why : '' }, given: g }; }
-        const r = checkText(cur.typed, e.answers, lang, lvl); r.err = r.ok && r.err !== 'accent' ? r.err : (e.type === 'conj' ? 'conjugation' : DRILL_ERR[e.drill] || 'grammar');
-        if (r.ok && r.kind !== 'exact') r.err = 'spelling';
+        // en gramática una letra o una tilde cambian la forma: sin tolerancia de erratas
+        const r = checkText(cur.typed, e.answers, lang, 'experto'); r.err = e.type === 'conj' ? 'conjugation' : DRILL_ERR[e.drill] || 'grammar';
+        if (r.kind === 'accent') r.note = 'Fíjate en las tildes o la diéresis: cambian la forma.';
         r.best = e.type === 'gram' ? Gram.fill(e.q, r.best || e.answer) : e.person + ' ' + (r.best || e.answer);
         if (e.why) r.note = (r.note ? r.note + ' ' : '') + '💡 ' + e.why;
         return { ok: r.ok, res: r, given: cur.typed };
@@ -4770,6 +4774,7 @@ const SpeakAct = {
           html = '<div class="small muted">Te he entendido: «' + esc(heard) + '»</div><div class="mt"><span class="small muted">Mejor así</span><div style="font-weight:650">' + esc(j.correccion || it.model) + '</div></div>' + (j.consejo ? '<div class="note mt">💡 ' + esc(j.consejo) + '</div>' : '');
           if (!ok && j.correccion) Memory.record(lang, { type: 'speak', item: { id: '', t: j.correccion, es: '' } }, false, { best: j.correccion, err: 'speaking' }, heard);
         } catch (e) { /* sin IA: valen las palabras clave */ }
+        if (this.st !== st || !$('#sa-foot')) return; // la actividad se cerró mientras respondía el tutor
       }
     }
     st.res[st.i] = ok; st.good = st.res.filter(Boolean).length;
@@ -4805,7 +4810,7 @@ ACT['sa-mic'] = async (a) => {
   if (Speech.rec) { Speech.cancelListen(); return; }
   Speech.stop(); a.classList.add('on'); $('#sa-hint').textContent = 'Escuchando…';
   try {
-    const r = await Speech.listen(st.lang, { max: st.kind === 'reading' || st.kind === 'scenes' ? 15000 : 10000, onInterim: (t) => { $('#sa-heard').textContent = t; } });
+    const r = await Speech.listen(st.lang, { max: st.kind === 'reading' ? 30000 : st.kind === 'scenes' ? 15000 : 10000, onInterim: (t) => { $('#sa-heard').textContent = t; } });
     st.cur.heard = r.text; st.cur.alts = r.alts; a.classList.remove('on'); SpeakAct.check();
   } catch (e) {
     a.classList.remove('on');
@@ -5195,6 +5200,7 @@ const Ruleta = {
     const V = Gram.verbsData(lang); let k = 0; const el = $('#rl-spin');
     const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const tick = setInterval(() => {
+      if (Games.cur !== g || !document.body.contains(el)) { clearInterval(tick); return; }
       k++; const vv = V.verbs[rand(V.verbs.length)];
       el.textContent = V.persons[rand(6)].split(' / ')[0] + ' · ' + vv.inf; Sound.play('tap');
       if (k >= (reduce ? 1 : 9)) {
@@ -5479,7 +5485,7 @@ function leagueHTML() {
   const wk = weekKey(), rows = (League.rows || []).filter((r) => r.wk === wk).sort((a, b) => b.wxp - a.wxp);
   const me = Store.uid;
   return '<div class="row between"><h3>Liga de amigos</h3><span class="small muted">Semana ' + wk.split('-W')[1] + '</span></div>' +
-    (rows.length ? '<div class="list mt">' + rows.map((r, i) => '<div class="lb-row' + (r.id === me ? ' me' : '') + '" data-uid="' + esc(r.id) + '"><span class="pos">' + (i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1) + '</span><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"><div class="grow"><b class="nm">' + (r.id === me ? 'Tú' : '…') + '</b><div class="small muted">' + flagText(r.lang) + ' · 🔥 ' + (r.streak || 0) + (r.today ? ' · hoy ✓' : ' · hoy pendiente') + '</div></div><b class="num">' + r.wxp + ' XP</b></div>').join('') + '</div>'
+    (rows.length ? '<div class="list mt">' + rows.map((r, i) => '<div class="lb-row' + (r.id === me ? ' me' : '') + '" data-uid="' + esc(r.id) + '"><span class="pos">' + (i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1) + '</span><img alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"><div class="grow"><b class="nm">' + (r.id === me ? 'Tú' : '…') + '</b><div class="small muted">' + flagText(r.lang) + ' · 🔥 ' + (+r.streak || 0) + (r.today ? ' · hoy ✓' : ' · hoy pendiente') + '</div></div><b class="num">' + (+r.wxp || 0) + ' XP</b></div>').join('') + '</div>'
       : '<p class="small fg2 mt">Aún nadie ha sumado XP esta semana. ¡Sé el primero!</p>') +
     (guestMode() ? '<p class="small muted mt">Tú no apareces porque entras sin permiso para guardar (enlace público). <button class="link" data-act="progress-why">Cómo solucionarlo</button></p>' : '<p class="small muted mt">Para que alguien aparezca: Compartir → desactiva el enlace público e invítale por correo como <b>Editor</b>.</p>');
 }

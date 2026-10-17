@@ -29,7 +29,7 @@ const P = {
   saveCourse(lang) { const n = 'course_' + (lang || P.profile.active); Store.save(n, Store.get(n)); },
   async loadCourse(lang) {
     const n = 'course_' + lang; let c = await Store.load(n);
-    if (!c) { c = defaultCourse(); Store.save(n, c); }
+    if (!c) { c = defaultCourse(); Store.save(n, c); if (Store.loadFailed.has(n)) toast('No he podido cargar este curso: recarga para no perder tu progreso.', 6000); }
     return c;
   },
   courseData(lang) { lang = lang || P.profile.active; const c = P.course(lang); return Course.get(lang, c && c.gen); },
